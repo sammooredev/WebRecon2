@@ -70,16 +70,16 @@ func CheckDomainsList(arg1 string) ([]string) {
 ///
 
 // function to generate potential subdomains using a list of publicly sourced subdomain names
-func PotentialSubdomainGeneratorMain(domains []string, program string, date string, wg *sync.WaitGroup) {
+func PotentialSubdomainGeneratorMain(domains []string, program string, date string, wg *sync.WaitGroup, mute sync.Mutex) {
 	// cmd output styling
 	out := output.NewConsoleOutput(true, nil)
-	wordlist_array := WordlistHandler("./wordlists/httparchive_subdomains_2022_12_28.txt")
+	wordlist_array := WordlistToArray("./wordlists/httparchive_subdomains_2022_12_28.txt")
 	// split wordlist_line string array into multiple slices
 	divided := Wordlist2DArrayGenerator(wordlist_array, 20)	
 	// start generation
 	out.Writeln("\n<info>INFO - Generating potential subdomains from file ./wordlists/httparchive_subdomains_2022_12_28.txt</info>")
 	start := time.Now()
-	SubdomainGenerator(domains, divided, program, date, wg, out)
+	SubdomainGenerator(domains, divided, program, date, wg, out, mute)
 	time_elapsed := time.Now().Sub(start)
 	total_generated := len(domains) * len(wordlist_array)
 	str := fmt.Sprintf("\n<info>INFO - Done! Finished in %v, generating %d subdomains.", time_elapsed, total_generated)
@@ -88,7 +88,7 @@ func PotentialSubdomainGeneratorMain(domains []string, program string, date stri
 }
 
 /* Opens a wordlist file and places each line into a string array. */
-func WordlistHandler(wordlist_file_path string) []string {
+func WordlistToArray(wordlist_file_path string) []string {
 	//open wordlist
 	wordlist, _ := os.Open(wordlist_file_path)
 	defer wordlist.Close()
@@ -115,7 +115,7 @@ func Wordlist2DArrayGenerator(wordlist_array []string, chunks int) [][]string {
 } 
 
 func SubdomainGenerator(domains []string, wordlist_2d_array [][]string,program string,
-	date string, wg *sync.WaitGroup, out *output.ConsoleOutput) {
+	date string, wg *sync.WaitGroup, out *output.ConsoleOutput, mute sync.Mutex) {
 	// subdomains_generated_count = count total number of subdomains generated, threads_count = number of threads generated.
 	var subdomains_generated_count int
 	var threads_count int
@@ -125,7 +125,10 @@ func SubdomainGenerator(domains []string, wordlist_2d_array [][]string,program s
 	var wg2 sync.WaitGroup
 	//create a worker for each domain in domains.txt
 	//wg2.Add(len(domains))
-	
+	// Lock writing
+	mute.Lock()
+	defer mute.Unlock()
+
 	for _, domain := range domains {
 		// for string arrays in divided
 		for _, i := range wordlist_2d_array {
@@ -139,7 +142,7 @@ func SubdomainGenerator(domains []string, wordlist_2d_array [][]string,program s
 				
 				output_file, err := os.OpenFile("./Programs/" + program + "/" + date + "/" + domain + "sub-generator" + strconv.Itoa(threads_count) + ".out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 				if err != nil {
-					out.Writeln("<error>ERROR! - Couldnt create subdomain generator output file \"./Programs/" + program + "/" + date + "/" + domain + "sub-generator." + strconv.Itoa(threads_count) + ".out\"</error>")
+					out.Writeln("<error>ERROR! - Couldn't create subdomain generator output file \"./Programs/" + program + "/" + date + "/" + domain + "sub-generator." + strconv.Itoa(threads_count) + ".out\"</error>")
 					os.Exit(1)
 				}
 		
@@ -195,6 +198,7 @@ func main() {
 	// declare variables
 	var wg sync.WaitGroup // for running cmd commands simultaneously 
 	var arg1 string // to store the <Program> arguement when WebRecon is ran (./WebRecon <arguement>)
+	var mute sync.Mutex // to establish queue for writing using multiple threads
 
 	// print title
 	io.Title("WebRecon - your moms favorite recon script")
@@ -221,7 +225,7 @@ func main() {
 
 	// generate subdomains, run amass, run subfinder, run X simultaneously. 
 	// run subdomain generator 
-	go PotentialSubdomainGeneratorMain(domains, arg1, date, &wg)
+	go PotentialSubdomainGeneratorMain(domains, arg1, date, &wg, mute)
 	wg.Add(1)
 //	go RunAmass(arg1, date, &wg)
 //	wg.Add(1)
