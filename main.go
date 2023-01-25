@@ -140,7 +140,7 @@ func SubdomainGenerator(domains []string, wordlist_2d_array [][]string,program s
 				// create output file for each domain
 				threads_count += 1
 				
-				output_file, err := os.OpenFile("./Programs/" + program + "/" + date + "/" + domain + "sub-generator" + strconv.Itoa(threads_count) + ".out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+				output_file, err := os.OpenFile("./Programs/" + program + "/" + date + "/sub-generator.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 				if err != nil {
 					out.Writeln("<error>ERROR! - Couldn't create subdomain generator output file \"./Programs/" + program + "/" + date + "/" + domain + "sub-generator." + strconv.Itoa(threads_count) + ".out\"</error>")
 					os.Exit(1)
