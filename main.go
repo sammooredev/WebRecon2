@@ -6,7 +6,8 @@ import (
 	"os/exec"
 	"sync"
 	"time"
-	//"fmt"
+	"math"
+	"fmt"
 	"strconv"
 	"github.com/DrSmithFr/go-console/pkg/input"
 	"github.com/DrSmithFr/go-console/pkg/output"
@@ -29,11 +30,6 @@ func CheckUserInput() {
 	if len(os.Args) == 1 {
 		PrintHelp()
 	}
-}
-
-// function to execute cmd commands
-func ExecuteCmd() {
-
 }
 
 // function to build a new directory for a recon scan 
@@ -74,11 +70,27 @@ func CheckDomainsList(arg1 string) ([]string) {
 ///
 
 // function to generate potential subdomains using a list of publicly sourced subdomain names
-func PotentialSubdomainsGenerator(domains []string, program string, date string, wg *sync.WaitGroup) {
+func PotentialSubdomainGeneratorMain(domains []string, program string, date string, wg *sync.WaitGroup) {
 	// cmd output styling
 	out := output.NewConsoleOutput(true, nil)
+	wordlist_array := WordlistHandler("./wordlists/httparchive_subdomains_2022_12_28.txt")
+	// split wordlist_line string array into multiple slices
+	divided := Wordlist2DArrayGenerator(wordlist_array, 20)	
+	// start generation
+	out.Writeln("\n<info>INFO - Generating potential subdomains from file ./wordlists/httparchive_subdomains_2022_12_28.txt</info>")
+	start := time.Now()
+	SubdomainGenerator(domains, divided, program, date, wg, out)
+	time_elapsed := time.Now().Sub(start)
+	total_generated := len(domains) * len(wordlist_array)
+	str := fmt.Sprintf("\n<info>INFO - Done! Finished in %v, generating %d subdomains.", time_elapsed, total_generated)
+	out.Writeln(str)
+	wg.Done()
+}
+
+/* Opens a wordlist file and places each line into a string array. */
+func WordlistHandler(wordlist_file_path string) []string {
 	//open wordlist
-	wordlist, _ := os.Open("./wordlists/httparchive_subdomains_2022_12_28.txt" )
+	wordlist, _ := os.Open(wordlist_file_path)
 	defer wordlist.Close()
 	// read lines from wordlist
 	scanner := bufio.NewScanner(wordlist)
@@ -88,24 +100,23 @@ func PotentialSubdomainsGenerator(domains []string, program string, date string,
 		// put lines into string array
 		wordlist_lines = append(wordlist_lines, scanner.Text())
 	}
-	// split wordlist_line string array into multiple slices
-	var divided [][]string
+	return wordlist_lines
+}
 
-	chunkSize := len(wordlist_lines) / 20
+func Wordlist2DArrayGenerator(wordlist_array []string, chunks int) [][]string {
+	var wordlist_2d_array [][]string
+	chunkSize := len(wordlist_array) / chunks
 
-	for i := 0; i < len(wordlist_lines); i += chunkSize {
-		end := i + chunkSize
-		
-		if end > len(wordlist_lines) {
-			end = len(wordlist_lines)
-		}
-
-		divided = append(divided, wordlist_lines[i:end])
+	for i := 0; i < len(wordlist_array); i += chunkSize {
+		end := math.Min(float64(i + chunkSize), float64(len(wordlist_array)))
+		wordlist_2d_array = append(wordlist_2d_array, wordlist_array[i:int64(end)])
 	}
-	
-	// start generation
-	out.Writeln("\n<info>INFO - Generating potential subdomains from file ./wordlists/httparchive_subdomains_2022_12_28.txt</info>")
-	// subdomains_generated_count = count total number of subdomains generated, theads_count = number of threads generated.
+	return wordlist_2d_array
+} 
+
+func SubdomainGenerator(domains []string, wordlist_2d_array [][]string,program string,
+	date string, wg *sync.WaitGroup, out *output.ConsoleOutput) {
+	// subdomains_generated_count = count total number of subdomains generated, threads_count = number of threads generated.
 	var subdomains_generated_count int
 	var threads_count int
 	subdomains_generated_count = 0
@@ -117,7 +128,7 @@ func PotentialSubdomainsGenerator(domains []string, program string, date string,
 	
 	for _, domain := range domains {
 		// for string arrays in divided
-		for _, i := range divided {
+		for _, i := range wordlist_2d_array {
 			wg2.Add(1)
 			foo := i 
 			//fmt.Printf("%#v\n", foo)
@@ -142,7 +153,6 @@ func PotentialSubdomainsGenerator(domains []string, program string, date string,
 		}
 	}
 	wg2.Wait()
-	wg.Done()
 }
 
 
@@ -211,7 +221,7 @@ func main() {
 
 	// generate subdomains, run amass, run subfinder, run X simultaneously. 
 	// run subdomain generator 
-	go PotentialSubdomainsGenerator(domains, arg1, date, &wg)
+	go PotentialSubdomainGeneratorMain(domains, arg1, date, &wg)
 	wg.Add(1)
 //	go RunAmass(arg1, date, &wg)
 //	wg.Add(1)
