@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 	"math"
+	"log"
 	"fmt"
 	"strconv"
 	"github.com/DrSmithFr/go-console/pkg/input"
@@ -128,6 +129,12 @@ func SubdomainGenerator(domains []string, wordlist_2d_array [][]string,program s
 	// Lock writing
 	mute.Lock()
 	defer mute.Unlock()
+	
+	output_file, err := os.OpenFile("./Programs/" + program + "/" + date + "/sub-generator.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		out.Writeln("<error>ERROR! \"</error>")
+		os.Exit(1)
+	}
 
 	for _, domain := range domains {
 		// for string arrays in divided
@@ -139,12 +146,6 @@ func SubdomainGenerator(domains []string, wordlist_2d_array [][]string,program s
 				//fmt.Println("started thread")
 				// create output file for each domain
 				threads_count += 1
-				
-				output_file, err := os.OpenFile("./Programs/" + program + "/" + date + "/sub-generator.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-				if err != nil {
-					out.Writeln("<error>ERROR! - Couldn't create subdomain generator output file \"./Programs/" + program + "/" + date + "/" + domain + "sub-generator." + strconv.Itoa(threads_count) + ".out\"</error>")
-					os.Exit(1)
-				}
 		
 				defer wg2.Done()
 				for _, line := range foo {
@@ -165,26 +166,66 @@ func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
 	out.Writeln("\n<info>INFO - Executing Amass against " + program_name + "</info>")
 	
 	cmd := exec.Command("bash", "-c", "amass enum -timeout 5 -df ./Programs/" + program_name + "/recon-data/domains.txt | tee -a ./Programs/" + program_name + "/" + date + "/amass.out")
-	stdout, _ := cmd.StdoutPipe()
-	cmd.Start()
-	oneByte := make([]byte, 100)
-	num := 1
-	for {
-		_, err := stdout.Read(oneByte)
-		if err != nil {
-			fmt.Printf(err.Error())
-			break
-		}
-		r := bufio.NewReader(stdout)
-		line, _, _ := r.ReadLine()
-		fmt.Println(string(line))
-		num = num + 1
-		if num > 3 {
-			os.Exit(0)
-		}
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
 	}
 
+	var wg2 sync.WaitGroup
+	wg2.Add(1)
+	count := 0
+
+	scanner := bufio.NewScanner(stdout)
+	go func(count int) {
+		for scanner.Scan() {
+			count += 1 
+			log.Printf(strconv.Itoa(count) + " amass out: %s", scanner.Text())
+		}
+		wg2.Done()
+	} (count)
+
+	if err = cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	wg2.Wait()
 	cmd.Wait()
+	out.Writeln("<info>INFO - Amass Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated. </info>")
+	wg.Done()
+}
+
+// function to run subfinder.
+func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
+	out := output.NewConsoleOutput(true, nil)
+	out.Writeln("\n<info>INFO - Executing subfinder against " + program_name + "</info>")
+	
+	cmd := exec.Command("bash", "-c", "subfinder -dL ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/subfinder.out")
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var wg2 sync.WaitGroup
+	wg2.Add(1)
+
+	count := 0
+	scanner := bufio.NewScanner(stdout)
+	go func(count int) {
+		for scanner.Scan() {
+			count += 1 
+			log.Printf(strconv.Itoa(count) + " subfinder out: %s", scanner.Text())
+			 
+		}
+		wg2.Done()
+	} (count)
+
+	if err = cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	wg2.Wait()
+	cmd.Wait()
+	out.Writeln("<info>INFO - Subfinder Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated. </info>")
 	wg.Done()
 }
 
@@ -201,7 +242,7 @@ func main() {
 	//var mute sync.Mutex // to establish queue for writing using multiple threads
 
 	// print title
-	io.Title("WebRecon - subdomain enumeration w00t")
+	io.Title("WebRecon - Your teeth in my neck drill")
 	
 	// check user inputted an arguement (./WebRecon arguement). if not, print help & exit, else continue
 	CheckUserInput()
@@ -228,6 +269,8 @@ func main() {
 	//go PotentialSubdomainGeneratorMain(domains, arg1, date, &wg, mute)
 	//wg.Add(1)
 	go RunAmass(arg1, date, &wg)
+	wg.Add(1)
+	go RunSubfinder(arg1, date, &wg)
 	wg.Add(1)
 	wg.Wait()
 }
