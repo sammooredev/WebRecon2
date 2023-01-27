@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 	"math"
+	"bytes"
+	"io/ioutil"
 	"log"
 	"fmt"
 	"strconv"
@@ -66,9 +68,46 @@ func CheckDomainsList(arg1 string) ([]string) {
 	return domains
 }
 
+// function to combine files in the scan folder
+func CombineFiles(program_name string, date string) {
+	// open output file (file of all subdomains combined)
+	data_directory := "./Programs/" + program_name + "/" + date + "/"
+	files := []string{data_directory + "sub-generator.out", data_directory + "amass.out", data_directory + "subfinder.out"} // add more entries here to combine more files
+ 	var buf bytes.Buffer
+	for _, file := range files {
+		b, err := ioutil.ReadFile(file)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		buf.Write(b)
+	}
+
+	err := ioutil.WriteFile(data_directory + "all_enumerated_subdomains_combined.txt", buf.Bytes(), 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+// function to remove duplicates from a string array
+func removeDuplicateString(strSlice []string) []string {
+	// map to store unique keys - https://www.golinuxcloud.com/golang-concat-slices-unique/
+	keys := make(map[string]bool)
+	returnSlice := []string{}
+	for _, item := range strSlice {
+		if _, value := keys[item]; !value {
+			keys[item] = true
+			returnSlice = append(returnSlice, item)
+		}
+	}
+	return returnSlice
+}
+
+
 ///
 // Subdomain Enumeration Functions  
 ///
+
 //function to generate potential subdomains using a list of publicly sourced subdomain names
 func PotentialSubdomainGeneratorMain(domains []string, program string, date string, wg *sync.WaitGroup, mute sync.Mutex) {
 	// cmd output styling
@@ -130,6 +169,7 @@ func SubdomainGenerator(domains []string, wordlist_2d_array [][]string,program s
 	mute.Lock()
 	defer mute.Unlock()
 	
+	//create output file
 	output_file, err := os.OpenFile("./Programs/" + program + "/" + date + "/sub-generator.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		out.Writeln("<error>ERROR! \"</error>")
@@ -224,9 +264,17 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 	}
 
 	wg2.Wait()
-	cmd.Wait()
+	cmd.Wait() //bug where this also prints 0 
 	out.Writeln("<info>INFO - Subfinder Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated. </info>")
 	wg.Done()
+}
+
+///
+// Functions for doing bruteforce reverse DNS resolving
+///
+
+func RunShuffleDNS(program_name string, date string, wg *sync.WaitGroup) {
+
 }
 
 
@@ -239,10 +287,10 @@ func main() {
 	// declare variables
 	var wg sync.WaitGroup // for running cmd commands simultaneously 
 	var arg1 string // to store the <Program> arguement when WebRecon is ran (./WebRecon <arguement>)
-	//var mute sync.Mutex // to establish queue for writing using multiple threads
+	var mute sync.Mutex // to establish queue for writing using multiple threads
 
 	// print title
-	io.Title("WebRecon - Your teeth in my neck drill")
+	io.Title("WebRecon - cowsay recon")
 	
 	// check user inputted an arguement (./WebRecon arguement). if not, print help & exit, else continue
 	CheckUserInput()
@@ -255,8 +303,8 @@ func main() {
 
 	// check domains list exists, has content, and output the domains to be tested
 	// the function returns a string array of the domains to be tested. the "domains" variable is set to this string array.
-	//domains := CheckDomainsList(arg1)
-	CheckDomainsList(arg1)
+	domains := CheckDomainsList(arg1)
+	//CheckDomainsList(arg1)
 	// build directory structure for new program
 	BuildNewProgramDirectory(arg1, date)
 	
@@ -264,13 +312,25 @@ func main() {
 	//  start of enumeration  //
 	////    				////
 
-	// generate subdomains, run amass, run subfinder, run X simultaneously. 
-	// run subdomain generator 
-	//go PotentialSubdomainGeneratorMain(domains, arg1, date, &wg, mute)
-	//wg.Add(1)
+	///
+	// Phase 1: subdomain generation. - generate subdomains, run amass, run subfinder, run X simultaneously. 
+	///
+	
+	go PotentialSubdomainGeneratorMain(domains, arg1, date, &wg, mute)
+	wg.Add(1)
 	go RunAmass(arg1, date, &wg)
 	wg.Add(1)
 	go RunSubfinder(arg1, date, &wg)
 	wg.Add(1)
 	wg.Wait()
-}
+
+	// the following function combines all the files within the date directory for the scan (./Programs/Google/01-25-23/*) into one file, all_generated_subdomains.txt
+	CombineFiles(arg1, date)
+
+
+	///
+	// Phase 2: validate subdomains exist via bruteforcing reverse dns lookups 
+	///
+
+	go RunShuffleDNS(arg1, date, &wg)
+}	
