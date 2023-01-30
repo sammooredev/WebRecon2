@@ -36,11 +36,28 @@ func CheckUserInput() {
 }
 
 // function to build a new directory for a recon scan 
-func BuildNewProgramDirectory(program_name string, date string) {
+func BuildNewProgramDirectory(program_name string, date string, domains []string) {
+	// this should work on every OS, not just linux.
 	out := output.NewConsoleOutput(true, nil)
-	cmd := "mkdir -p ./Programs/" + program_name + "/" + date
-	exec.Command("bash", "-c", cmd).Output()
+	path := "./Programs/" + program_name + "/" + date + "/top-level-domains"
+	
+	err := os.MkdirAll(path, os.ModePerm)
+	if err != nil {
+		log.Fatal(err)
+	}
+	// create directory for each top-level domain
+	for _, domain := range domains {
+		path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain
+		err := os.Mkdir(path, os.ModePerm)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	out.Writeln("<info>INFO - Created an output folder for: " + "<u>" + program_name + "</u>" + " -- (./Programs/" + program_name + "/" + date + ")</info>")
+	// original implementation:
+	//cmd := "mkdir -p ./Programs/" + program_name + "/" + date
+	//exec.Command("bash", "-c", cmd).Output()
 }
 
 // function to check whether a domains list exists. if it does, it prints out the domains to be in that file. Return a string array of the domains
@@ -70,6 +87,7 @@ func CheckDomainsList(arg1 string) ([]string) {
 
 // function to combine files in the scan folder
 func CombineFiles(program_name string, date string) {
+	out := output.NewConsoleOutput(true, nil)
 	// open output file (file of all subdomains combined)
 	data_directory := "./Programs/" + program_name + "/" + date + "/"
 	files := []string{data_directory + "sub-generator.out", data_directory + "amass.out", data_directory + "subfinder.out"} // add more entries here to combine more files
@@ -87,6 +105,25 @@ func CombineFiles(program_name string, date string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	// remove duplicates and re-write
+	wordlist_lines := WordlistToArray(data_directory + "all_enumerated_subdomains_combined.txt")
+	unique_wordlist := removeDuplicateString(wordlist_lines)
+	
+	//create output file
+	output_file, err := os.OpenFile(data_directory + "all_enumerated_subdomains_combined_unique.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		out.Writeln("<error>ERROR! \"</error>")
+		os.Exit(1)
+	}
+
+	for _, line := range unique_wordlist {
+		output_file.WriteString(line + "\n")
+	}
+}
+
+// function to seperate the all_enumerated_subdomains_combined.txt into seperate files based on the top level domain, and place them into their respective folders in /top-level-domains. This is needed so that shuffledns can be run on each root-domain, for the wildcard filtering.
+func SeperateAllSubdomainsIntoSeperateFolders() {
+
 }
 
 // function to remove duplicates from a string array
@@ -290,7 +327,7 @@ func main() {
 	var mute sync.Mutex // to establish queue for writing using multiple threads
 
 	// print title
-	io.Title("WebRecon - cowsay recon")
+	io.Title("WebRecon - ruby was here")
 	
 	// check user inputted an arguement (./WebRecon arguement). if not, print help & exit, else continue
 	CheckUserInput()
@@ -306,7 +343,7 @@ func main() {
 	domains := CheckDomainsList(arg1)
 	//CheckDomainsList(arg1)
 	// build directory structure for new program
-	BuildNewProgramDirectory(arg1, date)
+	BuildNewProgramDirectory(arg1, date, domains)
 	
 	////                    ////
 	//  start of enumeration  //
@@ -324,13 +361,14 @@ func main() {
 	wg.Add(1)
 	wg.Wait()
 
-	// the following function combines all the files within the date directory for the scan (./Programs/Google/01-25-23/*) into one file, all_generated_subdomains.txt
+	// the following function combines all the files within the date directory for the scan (./Programs/Google/01-25-23/*) into one file, all_generated_subdomains.txt 
 	CombineFiles(arg1, date)
+	
 
 
 	///
 	// Phase 2: validate subdomains exist via bruteforcing reverse dns lookups 
 	///
 
-	go RunShuffleDNS(arg1, date, &wg)
+	//go RunShuffleDNS(arg1, date, &wg)
 }	

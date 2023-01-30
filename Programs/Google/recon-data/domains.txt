@@ -1,0 +1,4 @@
+starbucks.com
+foo.com
+bar.com
+test.com
