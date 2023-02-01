@@ -121,9 +121,9 @@ func CombineFiles(program_name string, date string) {
 	}
 }
 
-// function to seperate the all_enumerated_subdomains_combined.txt into seperate files based on the top level domain, and place them into their respective folders in /top-level-domains. This is needed so that shuffledns can be run on each root-domain, for the wildcard filtering.
-func SeperateAllSubdomainsIntoSeperateFolders() {
-
+// function to seperate the all_enumerated_subdomains_combined_unqiue.txt into seperate files based on the top level domain, and place them into their respective folders in /top-level-domains. This is needed so that shuffledns can be run on each root-domain, for the wildcard filtering.
+func SeperateAllSubdomainsIntoSeperateFolders(program_name string, date string, domains []string) {
+	
 }
 
 // function to remove duplicates from a string array
@@ -361,8 +361,9 @@ func main() {
 	wg.Add(1)
 	wg.Wait()
 
-	// the following function combines all the files within the date directory for the scan (./Programs/Google/01-25-23/*) into one file, all_generated_subdomains.txt 
+	// this function combines all the files within the date directory for the scan (./Programs/Google/01-25-23/*) into one file, and removes duplicate entries. outputs the files: "all_enumerated_subdomains_combined.txt" & "all_enumerated_subdomains_combined_unique.txt"  
 	CombineFiles(arg1, date)
+	// this function seperates "all_enumerated_subdomains_combined_unique.txt" into seperate files by top-level-domain and places them into ./Programs/<program>/<date>/top-level-domain/<top-level-domain>/<top-level-domain>-subdomains.txt 
 	
 
 
