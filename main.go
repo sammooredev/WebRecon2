@@ -12,6 +12,10 @@ import (
 	"log"
 	"fmt"
 	"strconv"
+	"sort"
+	"strings"
+	"regexp"
+	"github.com/jpillora/go-tld"
 	"github.com/DrSmithFr/go-console/pkg/input"
 	"github.com/DrSmithFr/go-console/pkg/output"
 	"github.com/DrSmithFr/go-console/pkg/style"
@@ -121,9 +125,71 @@ func CombineFiles(program_name string, date string) {
 	}
 }
 
-// function to seperate the all_enumerated_subdomains_combined_unqiue.txt into seperate files based on the top level domain, and place them into their respective folders in /top-level-domains. This is needed so that shuffledns can be run on each root-domain, for the wildcard filtering.
-func SeperateAllSubdomainsIntoSeperateFolders(program_name string, date string, domains []string) {
+// function to separate the all_enumerated_subdomains_combined_unique.txt into separate files based on the top level domain, and place them into their respective folders in /top-level-domains. This is needed so that shuffledns can be run on each root-domain, for the wildcard filtering.
+func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, domains []string) {
+	// read all_enumerated_subdomains_combined_unique.txt into string array
+	all_unique_subdomains := WordlistToArray("./Programs/" + program_name + "/" + date + "/all_enumerated_subdomains_combined_unique.txt")
 	
+	sortedDomains := CatchRedundanciesInDomains(domains)
+	
+	// for value in top level domains string array:
+		// grep all lines with top level domain from all subdomains string array
+		// output to new file
+	for _, top_level_domain := range sortedDomains {
+		u, err := tld.Parse("https://" + top_level_domain + "/")
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("%50s = [ %s ] [ %s ] [ %s]\n",
+			u, u.Subdomain, u.Domain, u.TLD)
+
+		var regex *regexp.Regexp
+		
+		if len(u.Subdomain) > 0 {
+			regex, _ = regexp.Compile(".*\\." + u.Subdomain + "\\." + u.Domain + "\\." + u.TLD + "$")
+		} else {
+			regex, _ = regexp.Compile(".*\\." + u.Domain + "\\." + u.TLD + "$")
+		}
+		fmt.Println(regex.MatchString("foo.walt.disney.com"))
+		
+		// TODO: Convert to queue for faster runtime with multiple domains
+		var subdomains_sorted_by_tld []string
+		for _, line := range all_unique_subdomains {
+			if regex.MatchString(line) == true {
+				subdomains_sorted_by_tld = append(subdomains_sorted_by_tld, line)
+				
+			}
+		}
+		data_directory := "./Programs/" + program_name + "/" + date + "/"
+		output_file, err := os.OpenFile(data_directory + "top-level-domains/" + top_level_domain + "/" + top_level_domain + "-subdomains.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		for _, line := range subdomains_sorted_by_tld {
+			output_file.WriteString(line + "\n")
+		}
+	}
+}
+
+// convert domains string array into slice, order domains in slice by// convert domains string array into slice, order domains in slice by length (longest to smallest), catches edge cases where top level domains includes "google.com" "foo.google.com" so that it can match "foo.google.com" entries first. length (longest to smallest), catches edge cases where top level domains includes "google.com" "foo.google.com" so that it can match "foo.google.com" entries first.
+func CatchRedundanciesInDomains(domains []string) []string {
+	sortedDomains := domains[:] // length sorting code modified from https://code-maven.com/slides/golang/sort-strings-by-length
+	sort.Slice(sortedDomains, func(a, b int) bool {
+		return len(sortedDomains[a]) < len(sortedDomains[b]) 
+	})
+	
+	i, checkLen := 0, len(sortedDomains)
+	for i < checkLen {
+		for index, domain := range sortedDomains[i+1:] {
+			if strings.Contains(domain, sortedDomains[i]) {
+				sortedDomains = append(sortedDomains[:index+i+1], sortedDomains[index+i+2:]...)
+				checkLen -= 1
+			}
+		}
+		i += 1
+	}
+	return sortedDomains
 }
 
 // function to remove duplicates from a string array
@@ -145,6 +211,7 @@ func removeDuplicateString(strSlice []string) []string {
 // Subdomain Enumeration Functions  
 ///
 
+//TODO: rethink data structures
 //function to generate potential subdomains using a list of publicly sourced subdomain names
 func PotentialSubdomainGeneratorMain(domains []string, program string, date string, wg *sync.WaitGroup, mute sync.Mutex) {
 	// cmd output styling
@@ -242,7 +309,7 @@ func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
 	out := output.NewConsoleOutput(true, nil)
 	out.Writeln("\n<info>INFO - Executing Amass against " + program_name + "</info>")
 	
-	cmd := exec.Command("bash", "-c", "amass enum -timeout 5 -df ./Programs/" + program_name + "/recon-data/domains.txt | tee -a ./Programs/" + program_name + "/" + date + "/amass.out")
+	cmd := exec.Command("bash", "-c", "amass enum -timeout 2 -df ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/amass.out")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -253,13 +320,13 @@ func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
 	count := 0
 
 	scanner := bufio.NewScanner(stdout)
-	go func(count int) {
+	go func() {
 		for scanner.Scan() {
 			count += 1 
 			log.Printf(strconv.Itoa(count) + " amass out: %s", scanner.Text())
 		}
 		wg2.Done()
-	} (count)
+	} ()
 
 	if err = cmd.Start(); err != nil {
 		log.Fatal(err)
@@ -287,14 +354,13 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 
 	count := 0
 	scanner := bufio.NewScanner(stdout)
-	go func(count int) {
+	go func() {
 		for scanner.Scan() {
 			count += 1 
 			log.Printf(strconv.Itoa(count) + " subfinder out: %s", scanner.Text())
-			 
 		}
 		wg2.Done()
-	} (count)
+	} ()
 
 	if err = cmd.Start(); err != nil {
 		log.Fatal(err)
@@ -306,12 +372,15 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 	wg.Done()
 }
 
+
 ///
 // Functions for doing bruteforce reverse DNS resolving
 ///
 
-func RunShuffleDNS(program_name string, date string, wg *sync.WaitGroup) {
-
+func RunShuffleDNS(program_name string, date string, domain string, wg *sync.WaitGroup) {
+	fmt.Println("Starting Shuffledns for: " + domain)
+	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/" + domain + "/"
+	exec.Command("bash", "-c", "shuffledns -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.txt -o " + program_path + domain + "-shuffledns.out")
 }
 
 
@@ -327,7 +396,7 @@ func main() {
 	var mute sync.Mutex // to establish queue for writing using multiple threads
 
 	// print title
-	io.Title("WebRecon - ruby was here")
+	io.Title("WebRecon - bro she just not into you")
 	
 	// check user inputted an arguement (./WebRecon arguement). if not, print help & exit, else continue
 	CheckUserInput()
@@ -363,13 +432,17 @@ func main() {
 
 	// this function combines all the files within the date directory for the scan (./Programs/Google/01-25-23/*) into one file, and removes duplicate entries. outputs the files: "all_enumerated_subdomains_combined.txt" & "all_enumerated_subdomains_combined_unique.txt"  
 	CombineFiles(arg1, date)
-	// this function seperates "all_enumerated_subdomains_combined_unique.txt" into seperate files by top-level-domain and places them into ./Programs/<program>/<date>/top-level-domain/<top-level-domain>/<top-level-domain>-subdomains.txt 
-	
+	// this function separates "all_enumerated_subdomains_combined_unique.txt" into separate files by top-level-domain and places them into ./Programs/<program>/<date>/top-level-domain/<top-level-domain>/<top-level-domain>-subdomains.txt 
+	SeparateAllSubdomainsIntoSeparateFolders(arg1, date, domains)
 
 
 	///
 	// Phase 2: validate subdomains exist via bruteforcing reverse dns lookups 
 	///
-
-	//go RunShuffleDNS(arg1, date, &wg)
+	//for domain in range domains, run shuffledns
+	for _, domain := range domains {
+		go RunShuffleDNS(arg1, date, domain, &wg)
+		wg.Add(1)
+	}
+	wg.Wait()
 }	
