@@ -378,9 +378,38 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 ///
 
 func RunShuffleDNS(program_name string, date string, domain string, wg *sync.WaitGroup) {
-	fmt.Println("Starting Shuffledns for: " + domain)
-	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/" + domain + "/"
-	exec.Command("bash", "-c", "shuffledns -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.txt -o " + program_path + domain + "-shuffledns.out")
+	out := output.NewConsoleOutput(true, nil)
+	out.Writeln("\n<info>INFO - Executing shuffledns against " + domain + "</info>")
+	
+	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/"
+	cmd := exec.Command("bash", "-c", "shuffledns -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out -o " + program_path + domain + "-shuffledns.out")
+	
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var wg2 sync.WaitGroup
+	wg2.Add(1)
+
+	count := 0
+	scanner := bufio.NewScanner(stdout)
+	go func() {
+		for scanner.Scan() {
+			count += 1 
+			log.Printf(strconv.Itoa(count) + " shuffledns out: %s", scanner.Text())
+		}
+		wg2.Done()
+	} ()
+
+	if err = cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	wg2.Wait()
+	cmd.Wait() //bug where this also prints 0 
+	out.Writeln("<info>INFO - Shuffledns Complete. </info>")
+	wg.Done()
 }
 
 
