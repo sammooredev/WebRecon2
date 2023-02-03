@@ -326,7 +326,7 @@ func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
 	out := output.NewConsoleOutput(true, nil)
 	out.Writeln("\n<info>INFO - Executing Amass against " + program_name + "</info>")
 	
-	cmd := exec.Command("bash", "-c", "amass enum -timeout 1 -df ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/amass.out")
+	cmd := exec.Command("bash", "-c", "amass enum -timeout 10 -df ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/amass.out")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -340,7 +340,7 @@ func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
 	go func() {
 		for scanner.Scan() {
 			count += 1 
-			log.Printf(strconv.Itoa(count) + " amass out: %s", scanner.Text())
+			//log.Printf(strconv.Itoa(count) + " amass out: %s", scanner.Text())
 		}
 		wg2.Done()
 	} ()
@@ -374,7 +374,7 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 	go func() {
 		for scanner.Scan() {
 			count += 1 
-			log.Printf(strconv.Itoa(count) + " subfinder out: %s", scanner.Text())
+			//log.Printf(strconv.Itoa(count) + " subfinder out: %s", scanner.Text())
 		}
 		wg2.Done()
 	} ()
@@ -414,7 +414,7 @@ func RunShuffleDNS(program_name string, date string, domain string, wg *sync.Wai
 	go func() {
 		for scanner.Scan() {
 			count += 1 
-			log.Printf(strconv.Itoa(count) + " shuffledns out: %s", scanner.Text())
+			//log.Printf(strconv.Itoa(count) + " shuffledns out: %s", scanner.Text())
 		}
 		wg2.Done()
 	} ()
@@ -425,7 +425,7 @@ func RunShuffleDNS(program_name string, date string, domain string, wg *sync.Wai
 
 	wg2.Wait()
 	cmd.Wait() //bug where this also prints 0 
-	out.Writeln("<info>INFO - Shuffledns Complete for " + domain + ". </info>")
+	out.Writeln("<info>INFO - Shuffledns Complete for " + domain + ". " + strconv.Itoa(count) + " </info>")
 	wg.Done()
 }
 
@@ -486,9 +486,14 @@ func main() {
 	// Phase 2: validate subdomains exist via bruteforcing reverse dns lookups 
 	///
 	//for domain in range domains, run shuffledns
+	start := time.Now()
 	for _, domain := range sortedDomains {
 		go RunShuffleDNS(arg1, date, domain, &wg)
 		wg.Add(1)
 	}
 	wg.Wait()
+	time_elapsed := time.Now().Sub(start)
+	str := fmt.Sprintf("\n<info>INFO - ShuffleDNS Done! Finished in %v.", time_elapsed)
+	out.Writeln(str)
+
 }	
