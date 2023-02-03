@@ -132,10 +132,12 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 	
 	sortedDomains := CatchRedundanciesInDomains(domains)
 	
+	out := output.NewConsoleOutput(true, nil)
+	out.Writeln("\n<info>Beginning subdomain separation</info>")
 	// for value in top level domains string array:
 		// grep all lines with top level domain from all subdomains string array
 		// output to new file
-	for _, top_level_domain := range sortedDomains {
+	for index, top_level_domain := range sortedDomains {
 		u, err := tld.Parse("https://" + top_level_domain + "/")
 		if err != nil {
 			log.Fatal(err)
@@ -165,17 +167,18 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 		for _, line := range subdomains_sorted_by_tld {
 			output_file.WriteString(line + "\n")
 		}
+		out.Writeln("\n<info>Beginning subdomain separation #" + strconv.Itoa(index) + "</info>")
 	}
 }
 
 func ConditionallyDequeueSubdomains(all_unique_subdomains *[]string, regex *regexp.Regexp) []string {
 	subdomains_sorted_by_tld := make([]string, 0)
-	for _, _ := range len(*all_unique_subdomains) {
-		if regex.MatchString(*all_unique_subdomains[0]) == true {
-			subdomains_sorted_by_tld = append(subdomains_sorted_by_tld, line)
+	for _, _ = range *all_unique_subdomains {
+		if regex.MatchString((*all_unique_subdomains)[0]) == true {
+			subdomains_sorted_by_tld = append(subdomains_sorted_by_tld, (*all_unique_subdomains)[0])
 			*all_unique_subdomains = (*all_unique_subdomains)[1:]
 		} else {
-			requeue := *all_unique_subdomains[0]
+			requeue := (*all_unique_subdomains)[0]
 			*all_unique_subdomains = (*all_unique_subdomains)[1:]
 			*all_unique_subdomains = append((*all_unique_subdomains), requeue)
 		}
@@ -320,7 +323,7 @@ func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
 	out := output.NewConsoleOutput(true, nil)
 	out.Writeln("\n<info>INFO - Executing Amass against " + program_name + "</info>")
 	
-	cmd := exec.Command("bash", "-c", "amass enum -timeout 2 -df ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/amass.out")
+	cmd := exec.Command("bash", "-c", "amass enum -timeout 1 -df ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/amass.out")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
