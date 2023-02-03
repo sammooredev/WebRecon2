@@ -27,9 +27,7 @@ import (
 
 // function to print help
 func PrintHelp() {
-	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
-	io := style.NewGoStyler(in, out)
 	out.Writeln("<b>to run WebRecon, run the following commands. replace \\<name> with the name of the directory for the program you're testing.\n\n<comment>\t1. Create a directory for the test</comment>\n\t\t<info>$ mkdir -p ./Programs/\\<name>/recon-data\n</info>\n\t<comment>2. Create a domains.txt file containing the domains to test</comment>\n\t\t<info> $ vim ./Programs/\\<name>/recon-data/domains.txt</info>\n\n\t\t<info>NOTE - Each domain should be on a newline:\n\t\t\tfoo.com\n\t\t\tbar.com</info>\n\n\t<comment>3. Start enumeration on the program you set up</comment>\n\t\t<info>$ ./WebRecon \\<name></info>    * Note: \\<name> is the name of the directory in ./Programs/\\<name>")
 	os.Exit(1)
 }
@@ -44,9 +42,7 @@ func CheckUserInput() {
 // function to build a new directory for a recon scan 
 func BuildNewProgramDirectory(program_name string, date string, domains []string) {
 	// this should work on every OS, not just linux.
-	in := input.NewArgvInput(nil)
-	out := output.NewConsoleOutput(true, nil)
-	io := style.NewGoStyler(in, out)
+	out := output.NewConsoleOutput(true, nil)	
 	path := "./Programs/" + program_name + "/" + date + "/top-level-domains"
 	
 	err := os.MkdirAll(path, os.ModePerm)
@@ -63,9 +59,7 @@ func BuildNewProgramDirectory(program_name string, date string, domains []string
 
 // function to check whether a domains list exists. if it does, it prints out the domains to be in that file. Return a string array of the domains
 func CheckDomainsList(arg1 string) ([]string) {
-	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
-	io := style.NewGoStyler(in, out)
 	var domains []string
 	domains_list, err := os.Open("./Programs/" + arg1 + "/recon-data/domains.txt")
 	if err != nil {
@@ -90,9 +84,7 @@ func CheckDomainsList(arg1 string) ([]string) {
 
 // function to combine files in the scan folder
 func CombineFiles(program_name string, date string) {
-	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
-	io := style.NewGoStyler(in, out)
 	// open output file (file of all subdomains combined)
 	data_directory := "./Programs/" + program_name + "/" + date + "/"
 	files := []string{data_directory + "sub-generator.out", data_directory + "amass.out", data_directory + "subfinder.out"} // add more entries here to combine more files
@@ -145,17 +137,17 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
 	io := style.NewGoStyler(in, out)
-	out.Section("Beginning subdomain separation (seperating enumerated subdomains into seperate folders by domain.)")
+	io.Section("Beginning subdomain separation (separating enumerated subdomains into separate folders by domain.)")
 	// for value in top level domains string array:
 		// grep all lines with top level domain from all subdomains string array
 		// output to new file
-	for index, top_level_domain := range sortedDomains {
+	for _, top_level_domain := range sortedDomains {
 		u, err := tld.Parse("https://" + top_level_domain + "/")
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("%50s = [ %s ] [ %s ] [ %s]\n",
-			u, u.Subdomain, u.Domain, u.TLD)
+		//fmt.Printf("%50s = [ %s ] [ %s ] [ %s]\n",
+		//	u, u.Subdomain, u.Domain, u.TLD)
 
 		var regex *regexp.Regexp
 		
@@ -179,7 +171,7 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 		for _, line := range subdomains_sorted_by_tld {
 			output_file.WriteString(line + "\n")
 		}
-		out.Writeln("\n<info>Beginning subdomain separation #" + strconv.Itoa(index) + "</info>")
+		//out.Writeln("\n<info>Beginning subdomain separation #" + strconv.Itoa(index) + "</info>")
 	}
 	return sortedDomains
 }
@@ -249,12 +241,12 @@ func PotentialSubdomainGeneratorMain(domains []string, program string, date stri
 	// split wordlist_line string array into multiple slices
 	divided := Wordlist2DArrayGenerator(wordlist_array, 20)	
 	// start generation
-	out.Writeln("\n<info>INFO - Generating potential subdomains from file ./wordlists/httparchive_subdomains_2022_12_28.txt</info>")
+	out.Writeln("\t<info>INFO - Generating potential subdomains from file ./wordlists/httparchive_subdomains_2022_12_28.txt</info>")
 	start := time.Now()
 	SubdomainGenerator(domains, divided, program, date, wg, out, mute)
 	time_elapsed := time.Now().Sub(start)
 	total_generated := len(domains) * len(wordlist_array)
-	str := fmt.Sprintf("\nDone! Finished in %v, generating %d subdomains.", time_elapsed, total_generated)
+	str := fmt.Sprintf("\nGenerating potential subdomains complete! Finished in %v, generating %d subdomains.", time_elapsed, total_generated)
 	io.Success(str)
 	wg.Done()
 }
@@ -340,7 +332,7 @@ func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
 	io := style.NewGoStyler(in, out)
 	out.Writeln("\t<info>INFO - Executing Amass against " + program_name + "</info>")
 	
-	cmd := exec.Command("bash", "-c", "amass enum -timeout 10 -df ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/amass.out")
+	cmd := exec.Command("bash", "-c", "amass enum -timeout 2 -df ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/amass.out")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -365,7 +357,7 @@ func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
 
 	wg2.Wait()
 	cmd.Wait()
-	io.Success("\t<info>INFO - Amass Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated. </info>")
+	io.Success("Amass Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated.")
 	wg.Done()
 }
 
@@ -401,7 +393,7 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 
 	wg2.Wait()
 	cmd.Wait() //bug where this also prints 0 
-	io.Success("\t<info>INFO - Subfinder Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated. </info>")
+	io.Success("Subfinder Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated.")
 	wg.Done()
 }
 
@@ -411,9 +403,7 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 ///
 
 func RunShuffleDNS(program_name string, date string, domain string, wg *sync.WaitGroup) {
-	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
-	io := style.NewGoStyler(in, out)
 	out.Writeln("\t<info>INFO - Executing shuffledns against " + domain + "</info>")
 	
 	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/"
@@ -447,6 +437,44 @@ func RunShuffleDNS(program_name string, date string, domain string, wg *sync.Wai
 	wg.Done()
 }
 
+///
+// Functions for generating permutations of validated subdomains from shuffledns output
+///
+
+func RunDnsgen(program_name string, date string, domain string, wg *sync.WaitGroup) {
+	out := output.NewConsoleOutput(true, nil)
+	out.Writeln("\t<info>INFO - Executing dnsgen against " + domain + "</info>")
+	
+	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/"
+	cmd := exec.Command("bash", "-c", "dnsgen " + program_path + domain + "-shuffledns.out > " + program_path + domain + "-dnsgen.out")
+	
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var wg2 sync.WaitGroup
+	wg2.Add(1)
+
+	count := 0
+	scanner := bufio.NewScanner(stdout)
+	go func() {
+		for scanner.Scan() {
+			count += 1 
+			//log.Printf(strconv.Itoa(count) + " shuffledns out: %s", scanner.Text())
+		}
+		wg2.Done()
+	} ()
+
+	if err = cmd.Start(); err != nil {
+		log.Fatal(err)
+	}
+
+	wg2.Wait()
+	cmd.Wait() //bug where this also prints 0 
+	out.Writeln("\t<info>INFO - dnsgen Complete for " + domain + ". Generated " + strconv.Itoa(count) + " potential subdomains. </info>")
+	wg.Done()
+}
 
 func main() {
 	// cmd output styling stuff
@@ -460,7 +488,7 @@ func main() {
 	var mute sync.Mutex // to establish queue for writing using multiple threads
 
 	// print title
-	io.Title("WebRecon - bro she just not into you")
+	io.Title("WebRecon - subdomain enooooooooomeration")
 	
 	// check user inputted an arguement (./WebRecon arguement). if not, print help & exit, else continue
 	CheckUserInput()
@@ -497,22 +525,46 @@ func main() {
 	// this function combines all the files within the date directory for the scan (./Programs/Google/01-25-23/*) into one file, and removes duplicate entries. outputs the files: "all_enumerated_subdomains_combined.txt" & "all_enumerated_subdomains_combined_unique.txt"  
 	CombineFiles(arg1, date)
 	// this function separates "all_enumerated_subdomains_combined_unique.txt" into separate files by top-level-domain and places them into ./Programs/<program>/<date>/top-level-domain/<top-level-domain>/<top-level-domain>-subdomains.txt 
+	start1 := time.Now()
 	sortedDomains := SeparateAllSubdomainsIntoSeparateFolders(arg1, date, domains)
-
+	time_elapsed1 := time.Now().Sub(start1)
+	str := fmt.Sprintf("\nSeparating subdomains Done! Finished in %v.", time_elapsed1)
+	io.Success(str)
 
 	///
 	// Phase 2: validate subdomains exist via bruteforcing reverse dns lookups 
 	///
+
 	io.Section("Starting Reverse DNS Bruteforcing for " + arg1)
-	//for domain in range domains, run shuffledns
-	start := time.Now()
+	// start clock to get runtime
+	start2 := time.Now()
+	// for each domain in sortedDomain (a list of domains which has redudancies removed)
 	for _, domain := range sortedDomains {
+		// run shuffledns for the domain - an instance of shuffledns is ran for each domain as its required for wildcard filtering.
 		go RunShuffleDNS(arg1, date, domain, &wg)
 		wg.Add(1)
 	}
 	wg.Wait()
-	time_elapsed := time.Now().Sub(start)
-	str := fmt.Sprintf("\nShuffleDNS Done! Finished in %v.", time_elapsed)
-	io.Success(str)
+	// get time elapsed
+	time_elapsed2 := time.Now().Sub(start2)
+	// print out the commands completed and the runtime
+	str2 := fmt.Sprintf("\nShuffleDNS Done! Finished in %v.", time_elapsed2)
+	io.Success(str2)
 
+	///
+	// Phase 3: Run dnsgen on each shuffledns output, generating permutations of the valid domains
+	///
+	io.Section("Starting generating permutations via dnsgen for " + arg1)
+	// start clock to get runtime
+	start3 := time.Now()
+	for _, domain := range sortedDomains {
+		//run dnsgen for each shuffledns output
+		go RunDnsgen(arg1, date, domain, &wg)
+		wg.Add(1)
+	}
+	wg.Wait()
+	time_elapsed3 := time.Now().Sub(start3)
+	// print out the commands completed and the runtime
+	str3 := fmt.Sprintf("\nPermutation generation Done! Finished in %v.", time_elapsed3)
+	io.Success(str3)
 }	
