@@ -402,12 +402,20 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 // Functions for doing bruteforce reverse DNS resolving
 ///
 
-func RunShuffleDNS(program_name string, date string, domain string, wg *sync.WaitGroup) {
+func RunShuffleDNS(program_name string, date string, domain string, mode int, wg *sync.WaitGroup) {
 	out := output.NewConsoleOutput(true, nil)
 	out.Writeln("\t<info>INFO - Executing shuffledns against " + domain + "</info>")
 	
 	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/"
-	cmd := exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out -o " + program_path + domain + "-shuffledns.out")
+
+	//select mode (changes cmd command value dependenant on mode value passed as arguement. 0 = run against enumerated, 1 = run against dnsgen output)
+	var cmd *exec.Cmd
+	if mode == 0 {
+		cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out -o " + program_path + domain + "-shuffledns.out")
+	} else {
+		cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out -o " + program_path + domain + "-dnsgen-shuffledns.out")
+	}
+	
 	
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -446,7 +454,7 @@ func RunDnsgen(program_name string, date string, domain string, wg *sync.WaitGro
 	out.Writeln("\t<info>INFO - Executing dnsgen against " + domain + "</info>")
 	
 	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/"
-	cmd := exec.Command("bash", "-c", "dnsgen " + program_path + domain + "-shuffledns.out > " + program_path + domain + "-dnsgen.out")
+	cmd := exec.Command("bash", "-c", "dnsgen " + program_path + domain + "-shuffledns.out | tee -a " + program_path + domain + "-dnsgen.out")
 	
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -541,7 +549,7 @@ func main() {
 	// for each domain in sortedDomain (a list of domains which has redudancies removed)
 	for _, domain := range sortedDomains {
 		// run shuffledns for the domain - an instance of shuffledns is ran for each domain as its required for wildcard filtering.
-		go RunShuffleDNS(arg1, date, domain, &wg)
+		go RunShuffleDNS(arg1, date, domain, 0, &wg)
 		wg.Add(1)
 	}
 	wg.Wait()
@@ -567,4 +575,21 @@ func main() {
 	// print out the commands completed and the runtime
 	str3 := fmt.Sprintf("\nPermutation generation Done! Finished in %v.", time_elapsed3)
 	io.Success(str3)
+
+	///
+	// Phase 4: Validate dnsgen output subdomains exist via bruteforcing reverse dns lookups
+	///
+	start4 := time.Now()
+	// for each domain in sortedDomain (a list of domains which has redudancies removed)
+	for _, domain := range sortedDomains {
+		// run shuffledns for the domain - an instance of shuffledns is ran for each domain as its required for wildcard filtering.
+		go RunShuffleDNS(arg1, date, domain, 1, &wg)
+		wg.Add(1)
+	}
+	wg.Wait()
+	// get time elapsed
+	time_elapsed4 := time.Now().Sub(start4)
+	// print out the commands completed and the runtime
+	str4 := fmt.Sprintf("\nShuffleDNS against dnsgen ouput done! Finished in %v.", time_elapsed4)
+	io.Success(str4)
 }	
