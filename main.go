@@ -152,14 +152,10 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 		}
 		fmt.Println(regex.MatchString("foo.walt.disney.com"))
 		
-		// TODO: Convert to queue for faster runtime with multiple domains
+		// TODO: Test with queue implementation
 		var subdomains_sorted_by_tld []string
-		for _, line := range all_unique_subdomains {
-			if regex.MatchString(line) == true {
-				subdomains_sorted_by_tld = append(subdomains_sorted_by_tld, line)
-				
-			}
-		}
+		subdomains_sorted_by_tld = ConditionallyDequeueSubdomains(all_unique_subdomains, regex)
+
 		data_directory := "./Programs/" + program_name + "/" + date + "/"
 		output_file, err := os.OpenFile(data_directory + "top-level-domains/" + top_level_domain + "/" + top_level_domain + "-subdomains.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		if err != nil {
@@ -170,6 +166,21 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 			output_file.WriteString(line + "\n")
 		}
 	}
+}
+
+func ConditionallyDequeueSubdomains(all_unique_subdomains []string, regex *regexp.Regexp) []string {
+	subdomains_sorted_by_tld = make([]string, 0)
+	for _, line := range all_unique_subdomains {
+		if regex.MatchString(line) == true {
+			subdomains_sorted_by_tld = append(subdomains_sorted_by_tld, line)
+			all_unique_subdomains = all_unique_subdomains[1:]
+		} else {
+			requeue := all_unique_subdomains[0]
+			all_unique_subdomains = all_unique_subdomains[1:]
+			all_unique_subdomains = append(all_unique_subdomains, requeue)
+		}
+	}
+	return subdomains_sorted_by_tld
 }
 
 // convert domains string array into slice, order domains in slice by// convert domains string array into slice, order domains in slice by length (longest to smallest), catches edge cases where top level domains includes "google.com" "foo.google.com" so that it can match "foo.google.com" entries first. length (longest to smallest), catches edge cases where top level domains includes "google.com" "foo.google.com" so that it can match "foo.google.com" entries first.
