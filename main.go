@@ -49,15 +49,8 @@ func BuildNewProgramDirectory(program_name string, date string, domains []string
 	if err != nil {
 		log.Fatal(err)
 	}
-	// create directory for each top-level domain
-	for _, domain := range domains {
-		path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain
-		err := os.Mkdir(path, os.ModePerm)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
+	
+	
 	out.Writeln("<info>INFO - Created an output folder for: " + "<u>" + program_name + "</u>" + " -- (./Programs/" + program_name + "/" + date + ")</info>")
 	// original implementation:
 	//cmd := "mkdir -p ./Programs/" + program_name + "/" + date
@@ -126,12 +119,21 @@ func CombineFiles(program_name string, date string) {
 }
 
 // function to separate the all_enumerated_subdomains_combined_unique.txt into separate files based on the top level domain, and place them into their respective folders in /top-level-domains. This is needed so that shuffledns can be run on each root-domain, for the wildcard filtering.
-func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, domains []string) {
+func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, domains []string) []string {
 	// read all_enumerated_subdomains_combined_unique.txt into string array
 	all_unique_subdomains := WordlistToArray("./Programs/" + program_name + "/" + date + "/all_enumerated_subdomains_combined_unique.txt")
 	
 	sortedDomains := CatchRedundanciesInDomains(domains)
 	
+	// create directory for each top-level domain
+	for _, domain := range sortedDomains {
+		path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain
+		err := os.Mkdir(path, os.ModePerm)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
 	out := output.NewConsoleOutput(true, nil)
 	out.Writeln("\n<info>Beginning subdomain separation</info>")
 	// for value in top level domains string array:
@@ -152,7 +154,7 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 		} else {
 			regex, _ = regexp.Compile(".*\\." + u.Domain + "\\." + u.TLD + "$")
 		}
-		fmt.Println(regex.MatchString("foo.walt.disney.com"))
+		//fmt.Println(regex.MatchString("foo.walt.disney.com"))
 		
 		// TODO: Test with queue implementation
 		var subdomains_sorted_by_tld []string
@@ -169,6 +171,7 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 		}
 		out.Writeln("\n<info>Beginning subdomain separation #" + strconv.Itoa(index) + "</info>")
 	}
+	return sortedDomains
 }
 
 func ConditionallyDequeueSubdomains(all_unique_subdomains *[]string, regex *regexp.Regexp) []string {
@@ -396,7 +399,7 @@ func RunShuffleDNS(program_name string, date string, domain string, wg *sync.Wai
 	out.Writeln("\n<info>INFO - Executing shuffledns against " + domain + "</info>")
 	
 	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/"
-	cmd := exec.Command("bash", "-c", "shuffledns -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out -o " + program_path + domain + "-shuffledns.out")
+	cmd := exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out -o " + program_path + domain + "-shuffledns.out")
 	
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -422,7 +425,7 @@ func RunShuffleDNS(program_name string, date string, domain string, wg *sync.Wai
 
 	wg2.Wait()
 	cmd.Wait() //bug where this also prints 0 
-	out.Writeln("<info>INFO - Shuffledns Complete. </info>")
+	out.Writeln("<info>INFO - Shuffledns Complete for " + domain + ". </info>")
 	wg.Done()
 }
 
@@ -476,14 +479,14 @@ func main() {
 	// this function combines all the files within the date directory for the scan (./Programs/Google/01-25-23/*) into one file, and removes duplicate entries. outputs the files: "all_enumerated_subdomains_combined.txt" & "all_enumerated_subdomains_combined_unique.txt"  
 	CombineFiles(arg1, date)
 	// this function separates "all_enumerated_subdomains_combined_unique.txt" into separate files by top-level-domain and places them into ./Programs/<program>/<date>/top-level-domain/<top-level-domain>/<top-level-domain>-subdomains.txt 
-	SeparateAllSubdomainsIntoSeparateFolders(arg1, date, domains)
+	sortedDomains := SeparateAllSubdomainsIntoSeparateFolders(arg1, date, domains)
 
 
 	///
 	// Phase 2: validate subdomains exist via bruteforcing reverse dns lookups 
 	///
 	//for domain in range domains, run shuffledns
-	for _, domain := range domains {
+	for _, domain := range sortedDomains {
 		go RunShuffleDNS(arg1, date, domain, &wg)
 		wg.Add(1)
 	}
