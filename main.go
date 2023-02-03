@@ -27,7 +27,9 @@ import (
 
 // function to print help
 func PrintHelp() {
+	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
+	io := style.NewGoStyler(in, out)
 	out.Writeln("<b>to run WebRecon, run the following commands. replace \\<name> with the name of the directory for the program you're testing.\n\n<comment>\t1. Create a directory for the test</comment>\n\t\t<info>$ mkdir -p ./Programs/\\<name>/recon-data\n</info>\n\t<comment>2. Create a domains.txt file containing the domains to test</comment>\n\t\t<info> $ vim ./Programs/\\<name>/recon-data/domains.txt</info>\n\n\t\t<info>NOTE - Each domain should be on a newline:\n\t\t\tfoo.com\n\t\t\tbar.com</info>\n\n\t<comment>3. Start enumeration on the program you set up</comment>\n\t\t<info>$ ./WebRecon \\<name></info>    * Note: \\<name> is the name of the directory in ./Programs/\\<name>")
 	os.Exit(1)
 }
@@ -42,7 +44,9 @@ func CheckUserInput() {
 // function to build a new directory for a recon scan 
 func BuildNewProgramDirectory(program_name string, date string, domains []string) {
 	// this should work on every OS, not just linux.
+	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
+	io := style.NewGoStyler(in, out)
 	path := "./Programs/" + program_name + "/" + date + "/top-level-domains"
 	
 	err := os.MkdirAll(path, os.ModePerm)
@@ -59,7 +63,9 @@ func BuildNewProgramDirectory(program_name string, date string, domains []string
 
 // function to check whether a domains list exists. if it does, it prints out the domains to be in that file. Return a string array of the domains
 func CheckDomainsList(arg1 string) ([]string) {
+	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
+	io := style.NewGoStyler(in, out)
 	var domains []string
 	domains_list, err := os.Open("./Programs/" + arg1 + "/recon-data/domains.txt")
 	if err != nil {
@@ -84,7 +90,9 @@ func CheckDomainsList(arg1 string) ([]string) {
 
 // function to combine files in the scan folder
 func CombineFiles(program_name string, date string) {
+	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
+	io := style.NewGoStyler(in, out)
 	// open output file (file of all subdomains combined)
 	data_directory := "./Programs/" + program_name + "/" + date + "/"
 	files := []string{data_directory + "sub-generator.out", data_directory + "amass.out", data_directory + "subfinder.out"} // add more entries here to combine more files
@@ -134,7 +142,9 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 		}
 	}
 
+	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
+	io := style.NewGoStyler(in, out)
 	out.Section("Beginning subdomain separation (seperating enumerated subdomains into seperate folders by domain.)")
 	// for value in top level domains string array:
 		// grep all lines with top level domain from all subdomains string array
@@ -232,7 +242,9 @@ func removeDuplicateString(strSlice []string) []string {
 //function to generate potential subdomains using a list of publicly sourced subdomain names
 func PotentialSubdomainGeneratorMain(domains []string, program string, date string, wg *sync.WaitGroup, mute sync.Mutex) {
 	// cmd output styling
+	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
+	io := style.NewGoStyler(in, out)
 	wordlist_array := WordlistToArray("./wordlists/httparchive_subdomains_2022_12_28.txt")
 	// split wordlist_line string array into multiple slices
 	divided := Wordlist2DArrayGenerator(wordlist_array, 20)	
@@ -243,7 +255,7 @@ func PotentialSubdomainGeneratorMain(domains []string, program string, date stri
 	time_elapsed := time.Now().Sub(start)
 	total_generated := len(domains) * len(wordlist_array)
 	str := fmt.Sprintf("\nDone! Finished in %v, generating %d subdomains.", time_elapsed, total_generated)
-	out.Success(str)
+	io.Success(str)
 	wg.Done()
 }
 
@@ -323,7 +335,9 @@ func SubdomainGenerator(domains []string, wordlist_2d_array [][]string,program s
 
 // function to run amass.
 func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
+	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
+	io := style.NewGoStyler(in, out)
 	out.Writeln("\t<info>INFO - Executing Amass against " + program_name + "</info>")
 	
 	cmd := exec.Command("bash", "-c", "amass enum -timeout 10 -df ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/amass.out")
@@ -351,13 +365,15 @@ func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
 
 	wg2.Wait()
 	cmd.Wait()
-	out.Success("\t<info>INFO - Amass Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated. </info>")
+	io.Success("\t<info>INFO - Amass Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated. </info>")
 	wg.Done()
 }
 
 // function to run subfinder.
 func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
+	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
+	io := style.NewGoStyler(in, out)
 	out.Writeln("\t<info>INFO - Executing subfinder against " + program_name + "</info>")
 	
 	cmd := exec.Command("bash", "-c", "subfinder -dL ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/subfinder.out")
@@ -385,7 +401,7 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 
 	wg2.Wait()
 	cmd.Wait() //bug where this also prints 0 
-	out.Success("\t<info>INFO - Subfinder Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated. </info>")
+	io.Success("\t<info>INFO - Subfinder Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated. </info>")
 	wg.Done()
 }
 
@@ -395,7 +411,9 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 ///
 
 func RunShuffleDNS(program_name string, date string, domain string, wg *sync.WaitGroup) {
+	in := input.NewArgvInput(nil)
 	out := output.NewConsoleOutput(true, nil)
+	io := style.NewGoStyler(in, out)
 	out.Writeln("\t<info>INFO - Executing shuffledns against " + domain + "</info>")
 	
 	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/"
@@ -495,6 +513,6 @@ func main() {
 	wg.Wait()
 	time_elapsed := time.Now().Sub(start)
 	str := fmt.Sprintf("\nShuffleDNS Done! Finished in %v.", time_elapsed)
-	out.Success(str)
+	io.Success(str)
 
 }	
