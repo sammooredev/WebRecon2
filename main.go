@@ -169,13 +169,13 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 }
 
 func ConditionallyDequeueSubdomains(all_unique_subdomains *[]string, regex *regexp.Regexp) []string {
-	subdomains_sorted_by_tld = make([]string, 0)
-	for _, line := range all_unique_subdomains {
-		if regex.MatchString(line) == true {
+	subdomains_sorted_by_tld := make([]string, 0)
+	for _, _ := range len(*all_unique_subdomains) {
+		if regex.MatchString(*all_unique_subdomains[0]) == true {
 			subdomains_sorted_by_tld = append(subdomains_sorted_by_tld, line)
 			*all_unique_subdomains = (*all_unique_subdomains)[1:]
 		} else {
-			requeue := all_unique_subdomains[0]
+			requeue := *all_unique_subdomains[0]
 			*all_unique_subdomains = (*all_unique_subdomains)[1:]
 			*all_unique_subdomains = append((*all_unique_subdomains), requeue)
 		}
