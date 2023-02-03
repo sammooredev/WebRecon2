@@ -154,7 +154,7 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 		
 		// TODO: Test with queue implementation
 		var subdomains_sorted_by_tld []string
-		subdomains_sorted_by_tld = ConditionallyDequeueSubdomains(all_unique_subdomains, regex)
+		subdomains_sorted_by_tld = ConditionallyDequeueSubdomains(&all_unique_subdomains, regex)
 
 		data_directory := "./Programs/" + program_name + "/" + date + "/"
 		output_file, err := os.OpenFile(data_directory + "top-level-domains/" + top_level_domain + "/" + top_level_domain + "-subdomains.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -168,16 +168,16 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 	}
 }
 
-func ConditionallyDequeueSubdomains(all_unique_subdomains []string, regex *regexp.Regexp) []string {
+func ConditionallyDequeueSubdomains(all_unique_subdomains *[]string, regex *regexp.Regexp) []string {
 	subdomains_sorted_by_tld = make([]string, 0)
 	for _, line := range all_unique_subdomains {
 		if regex.MatchString(line) == true {
 			subdomains_sorted_by_tld = append(subdomains_sorted_by_tld, line)
-			all_unique_subdomains = all_unique_subdomains[1:]
+			*all_unique_subdomains = (*all_unique_subdomains)[1:]
 		} else {
 			requeue := all_unique_subdomains[0]
-			all_unique_subdomains = all_unique_subdomains[1:]
-			all_unique_subdomains = append(all_unique_subdomains, requeue)
+			*all_unique_subdomains = (*all_unique_subdomains)[1:]
+			*all_unique_subdomains = append((*all_unique_subdomains), requeue)
 		}
 	}
 	return subdomains_sorted_by_tld
