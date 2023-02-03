@@ -135,7 +135,7 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 	}
 
 	out := output.NewConsoleOutput(true, nil)
-	out.Writeln("\n<info>Beginning subdomain separation</info>")
+	out.Section("Beginning subdomain separation (seperating enumerated subdomains into seperate folders by domain.)")
 	// for value in top level domains string array:
 		// grep all lines with top level domain from all subdomains string array
 		// output to new file
@@ -242,8 +242,8 @@ func PotentialSubdomainGeneratorMain(domains []string, program string, date stri
 	SubdomainGenerator(domains, divided, program, date, wg, out, mute)
 	time_elapsed := time.Now().Sub(start)
 	total_generated := len(domains) * len(wordlist_array)
-	str := fmt.Sprintf("\n<info>INFO - Done! Finished in %v, generating %d subdomains.", time_elapsed, total_generated)
-	out.Writeln(str)
+	str := fmt.Sprintf("\nDone! Finished in %v, generating %d subdomains.", time_elapsed, total_generated)
+	out.Success(str)
 	wg.Done()
 }
 
@@ -324,7 +324,7 @@ func SubdomainGenerator(domains []string, wordlist_2d_array [][]string,program s
 // function to run amass.
 func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
 	out := output.NewConsoleOutput(true, nil)
-	out.Writeln("\n<info>INFO - Executing Amass against " + program_name + "</info>")
+	out.Writeln("\t<info>INFO - Executing Amass against " + program_name + "</info>")
 	
 	cmd := exec.Command("bash", "-c", "amass enum -timeout 10 -df ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/amass.out")
 	stdout, err := cmd.StdoutPipe()
@@ -351,14 +351,14 @@ func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
 
 	wg2.Wait()
 	cmd.Wait()
-	out.Writeln("<info>INFO - Amass Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated. </info>")
+	out.Success("\t<info>INFO - Amass Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated. </info>")
 	wg.Done()
 }
 
 // function to run subfinder.
 func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 	out := output.NewConsoleOutput(true, nil)
-	out.Writeln("\n<info>INFO - Executing subfinder against " + program_name + "</info>")
+	out.Writeln("\t<info>INFO - Executing subfinder against " + program_name + "</info>")
 	
 	cmd := exec.Command("bash", "-c", "subfinder -dL ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/subfinder.out")
 	stdout, err := cmd.StdoutPipe()
@@ -385,7 +385,7 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 
 	wg2.Wait()
 	cmd.Wait() //bug where this also prints 0 
-	out.Writeln("<info>INFO - Subfinder Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated. </info>")
+	out.Success("\t<info>INFO - Subfinder Enumeration Complete. " + strconv.Itoa(count) + " subdomains enumerated. </info>")
 	wg.Done()
 }
 
@@ -396,7 +396,7 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 
 func RunShuffleDNS(program_name string, date string, domain string, wg *sync.WaitGroup) {
 	out := output.NewConsoleOutput(true, nil)
-	out.Writeln("\n<info>INFO - Executing shuffledns against " + domain + "</info>")
+	out.Writeln("\t<info>INFO - Executing shuffledns against " + domain + "</info>")
 	
 	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/"
 	cmd := exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out -o " + program_path + domain + "-shuffledns.out")
@@ -425,7 +425,7 @@ func RunShuffleDNS(program_name string, date string, domain string, wg *sync.Wai
 
 	wg2.Wait()
 	cmd.Wait() //bug where this also prints 0 
-	out.Writeln("<info>INFO - Shuffledns Complete for " + domain + ". " + strconv.Itoa(count) + " </info>")
+	out.Writeln("\t<info>INFO - Shuffledns Complete for " + domain + ". Found " + strconv.Itoa(count) + " valid subdomains. </info>")
 	wg.Done()
 }
 
@@ -463,7 +463,7 @@ func main() {
 	////                    ////
 	//  start of enumeration  //
 	////    				////
-
+	io.Section("Starting Subdomain Enumeration & Generating Potential Subdomains for " + arg1)
 	///
 	// Phase 1: subdomain generation. - generate subdomains, run amass, run subfinder, run X simultaneously. 
 	///
@@ -485,6 +485,7 @@ func main() {
 	///
 	// Phase 2: validate subdomains exist via bruteforcing reverse dns lookups 
 	///
+	io.Section("Starting Reverse DNS Bruteforcing for " + arg1)
 	//for domain in range domains, run shuffledns
 	start := time.Now()
 	for _, domain := range sortedDomains {
@@ -493,7 +494,7 @@ func main() {
 	}
 	wg.Wait()
 	time_elapsed := time.Now().Sub(start)
-	str := fmt.Sprintf("\n<info>INFO - ShuffleDNS Done! Finished in %v.", time_elapsed)
-	out.Writeln(str)
+	str := fmt.Sprintf("\nShuffleDNS Done! Finished in %v.", time_elapsed)
+	out.Success(str)
 
 }	
