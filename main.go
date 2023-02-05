@@ -462,12 +462,22 @@ func RunShuffleDNS(program_name string, date string, domain string, mode int, wg
 
 	//select mode (changes cmd command value dependenant on mode value passed as arguement. 0 = run against enumerated, 1 = run against dnsgen output)
 	var cmd *exec.Cmd
+	var output_file *os.File
+	var err error
 	if mode == 0 {
-		cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out -o " + program_path + domain + "-shuffledns.out")
-	} else {
-		cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out -o " + program_path + domain + "-dnsgen-shuffledns.out")
+		cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out")// -o " + program_path + domain + "-shuffledns.out")
+		//create output file
+		output_file, err = os.OpenFile(program_path + domain + "-shuffledns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatal(err)
+		} else {
+		cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")// + program_path + domain + "-dnsgen-shuffledns.out")
+		output_file, err = os.OpenFile(program_path + domain + "dnsgen-shuffledns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatal(err)
+			}
+		}	
 	}
-	
 	
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -476,13 +486,16 @@ func RunShuffleDNS(program_name string, date string, domain string, mode int, wg
 
 	var wg2 sync.WaitGroup
 	wg2.Add(1)
+	
 
+	
 	count := 0
 	scanner := bufio.NewScanner(stdout)
 	go func() {
 		for scanner.Scan() {
 			count += 1 
-			//log.Printf(strconv.Itoa(count) + " shuffledns out: %s", scanner.Text())
+			log.Printf(strconv.Itoa(count) + " shuffledns out: %s", scanner.Text())
+			output_file.WriteString(strings.ToLower(scanner.Text()) + "\n")
 		}
 		wg2.Done()
 	} ()
@@ -521,7 +534,7 @@ func RunDnsgen(program_name string, date string, domain string, wg *sync.WaitGro
 	go func() {
 		for scanner.Scan() {
 			count += 1 
-			//log.Printf(strconv.Itoa(count) + " shuffledns out: %s", scanner.Text())
+			//log.Printf(strconv.Itoa(count) + " %s", scanner.Text())
 		}
 		wg2.Done()
 	} ()
