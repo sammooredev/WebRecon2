@@ -121,11 +121,13 @@ func CombineFiles(program_name string, date string) {
 // function to combine all valid enumerated subdomains into one file "all_valid_subdomains_discovered.txt"
 func CreateFileOfAllValidSubdomainsCombined(program_name string, date string, domains []string) {
 	out := output.NewConsoleOutput(true, nil)
-	// create string array of "<domain>-starbucks.com-dnsgen-shuffledns.out" file paths for each domain that was tested
+	// create string array of "<domain>-dnsgen-shuffledns.out" and "<domain>-shuffledns.out" file paths for each domain that was tested
 	var files []string
 	for _, domain := range domains {
 		data_directory := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/" + domain + "-dnsgen-shuffledns.out"
+		data_directory2 := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/" + domain + "-shuffledns.out"
 		files = append(files, data_directory)
+		files = append(files, data_directory2)
 	}
 
 	// create arbitrary sized buffer for data from files. then for each file, read its contents, write to buffer
@@ -464,15 +466,19 @@ func RunShuffleDNS(program_name string, date string, domain string, mode int, wg
 	var cmd *exec.Cmd
 	var output_file *os.File
 	if mode == 0 {
-		out.Writeln("shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out")
-		cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out")// -o " + program_path + domain + "-shuffledns.out")
+		//out.Writeln("shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out")
+		//cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out")// -o " + program_path + domain + "-shuffledns.out")
+		//puredns testing
+		cmd = exec.Command("bash", "-c", "puredns resolve " + program_path + domain + "-shuffledns.out -r ./wordlists/resolvers.txt")
 		//create output file
 		output_file, _ = os.OpenFile(program_path + domain + "-shuffledns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		} else {
-			out.Writeln("shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")
-			cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")// + program_path + domain + "-dnsgen-shuffledns.out")
-			output_file, _ = os.OpenFile(program_path + domain + "-dnsgen-shuffledns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		}	
+	} else {
+		//out.Writeln("shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")
+		//cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")// + program_path + domain + "-dnsgen-shuffledns.out")
+		//puredns testing
+		cmd = exec.Command("bash", "-c", "puredns resolve " + program_path + domain + "-dnsgen.out -r ./wordlists/resolvers.txt")
+		output_file, _ = os.OpenFile(program_path + domain + "-dnsgen-shuffledns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	}	
 
 	
 	stdout, _ := cmd.StdoutPipe()
