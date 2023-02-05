@@ -471,7 +471,7 @@ func RunShuffleDNS(program_name string, date string, domain string, mode int, wg
 		} else {
 			out.Writeln("shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")
 			cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")// + program_path + domain + "-dnsgen-shuffledns.out")
-			output_file, _ = os.OpenFile(program_path + domain + "dnsgen-shuffledns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+			output_file, _ = os.OpenFile(program_path + domain + "-dnsgen-shuffledns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		}	
 
 	
