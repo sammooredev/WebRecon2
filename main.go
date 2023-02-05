@@ -463,49 +463,46 @@ func RunShuffleDNS(program_name string, date string, domain string, mode int, wg
 	//select mode (changes cmd command value dependenant on mode value passed as arguement. 0 = run against enumerated, 1 = run against dnsgen output)
 	var cmd *exec.Cmd
 	var output_file *os.File
-	var err error
 	if mode == 0 {
+		out.Writeln("shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out")
 		cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out")// -o " + program_path + domain + "-shuffledns.out")
 		//create output file
-		output_file, err = os.OpenFile(program_path + domain + "-shuffledns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Fatal(err)
+		output_file, _ = os.OpenFile(program_path + domain + "-shuffledns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		} else {
-		cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")// + program_path + domain + "-dnsgen-shuffledns.out")
-		output_file, err = os.OpenFile(program_path + domain + "dnsgen-shuffledns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Fatal(err)
-			}
+			out.Writeln("shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")
+			cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")// + program_path + domain + "-dnsgen-shuffledns.out")
+			output_file, _ = os.OpenFile(program_path + domain + "dnsgen-shuffledns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 		}	
-	}
+
 	
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		log.Fatal(err)
-	}
+	stdout, _ := cmd.StdoutPipe()
+
 
 	var wg2 sync.WaitGroup
 	wg2.Add(1)
 	
 
-	
+	var shufflednsout []string 
 	count := 0
 	scanner := bufio.NewScanner(stdout)
 	go func() {
 		for scanner.Scan() {
 			count += 1 
 			log.Printf(strconv.Itoa(count) + " shuffledns out: %s", scanner.Text())
-			output_file.WriteString(strings.ToLower(scanner.Text()) + "\n")
+			shufflednsout = append(shufflednsout, strings.ToLower(scanner.Text()) + "\n")
 		}
 		wg2.Done()
 	} ()
 
-	if err = cmd.Start(); err != nil {
+	if err := cmd.Start(); err != nil {
 		log.Fatal(err)
 	}
 
 	wg2.Wait()
 	cmd.Wait() //bug where this also prints 0 
+	for _, line := range shufflednsout {
+		output_file.WriteString(line)
+	} 
 	out.Writeln("\t<info>INFO - Shuffledns Complete for " + domain + ". Found " + strconv.Itoa(count) + " valid subdomains. </info>")
 	wg.Done()
 }
