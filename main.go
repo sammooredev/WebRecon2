@@ -400,6 +400,7 @@ func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
 	go func() {
 		for scanner.Scan() {
 			count += 1 
+			// UNCOMMENT NEXT LINE TO DEBUG AMASS
 			//log.Printf(strconv.Itoa(count) + " amass out: %s", scanner.Text())
 		}
 		wg2.Done()
@@ -438,13 +439,14 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 	go func() {
 		for scanner.Scan() {
 			count += 1 
-			log.Printf(strconv.Itoa(count) + " subfinder out: %s", scanner.Text())
+			//log.Printf(strconv.Itoa(count) + " subfinder out: %s", scanner.Text())
 		}
 		wg2.Done()
 	} ()
 
 	if err = cmd.Start(); err != nil {
 		log.Fatal(err)
+		log.Printf(scanner2.Text())
 	}
 
 	wg2.Wait()
@@ -498,7 +500,7 @@ func RunShuffleDNS(program_name string, date string, domain string, mode int, wg
 	go func() {
 		for scanner.Scan() {
 			count += 1 
-			log.Printf(strconv.Itoa(count) + " shuffledns out: %s", scanner.Text())
+			//log.Printf(strconv.Itoa(count) + " shuffledns out: %s", scanner.Text())
 			shufflednsout = append(shufflednsout, strings.ToLower(scanner.Text()) + "\n")
 		}
 		wg2.Done()
