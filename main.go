@@ -575,6 +575,8 @@ func main() {
 	// check user inputted an arguement (./WebRecon arguement). if not, print help & exit, else continue
 	CheckUserInput()
 	
+	// get full tool run time
+	full_runtime := time.Now()
 	// get program name as argument
 	arg1 = os.Args[1]
 	
@@ -630,7 +632,7 @@ func main() {
 	// get time elapsed
 	time_elapsed2 := time.Now().Sub(start2)
 	// print out the commands completed and the runtime
-	str2 := fmt.Sprintf("ShuffleDNS Done! Finished in %v.", time_elapsed2)
+	str2 := fmt.Sprintf("Reverse DNS Bruteforcing Done! Finished in %v.", time_elapsed2)
 	io.Success(str2)
 
 	///
@@ -654,7 +656,7 @@ func main() {
 	// Phase 4: Validate dnsgen output subdomains exist via bruteforcing reverse dns lookups
 	///
 
-	io.Section("Starting second round of ShuffleDNS against the dnsgen output for " + arg1)
+	io.Section("Starting second round of reverse DNS bruteforcing against the dnsgen output for " + arg1)
 
 	start4 := time.Now()
 	// for each domain in sortedDomain (a list of domains which has redudancies removed)
@@ -667,13 +669,17 @@ func main() {
 	// get time elapsed
 	time_elapsed4 := time.Now().Sub(start4)
 	// print out the commands completed and the runtime
-	str4 := fmt.Sprintf("ShuffleDNS against dnsgen ouput done! Finished in %v.", time_elapsed4)
+	str4 := fmt.Sprintf("Reverse DNS Bruteforcing against dnsgen ouput done! Finished in %v.", time_elapsed4)
 	io.Success(str4)
 
 	///
 	// Phase 5: Completion and clean up. Combine dnsgen outputs, place into <date> directory for test. print a goodbye message
 	///
-	io.Section("All enumeration and DNS bruteforcing complete. Creating output files for " + arg1 + "...")
+	io.Section("All enumeration and reverse DNS bruteforcing complete. Creating output files for " + arg1 + "...")
 	CreateFileOfAllValidSubdomainsCombined(arg1, date, sortedDomains)
-
+	
+	fullruntime_elapsed := time.Now().Sub(full_runtime)
+	// print out the commands completed and the runtime
+	str5 := fmt.Sprintf("WebRecon2 Complete! Finished in %v.", fullruntime_elapsed)
+	io.Success(str5)
 }	

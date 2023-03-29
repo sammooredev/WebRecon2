@@ -82,22 +82,12 @@ If you wish to test WebRecon2 with a quickstart, the [Starbucks](https://hackero
 ```
 $ ./WebRecon2 Starbucks
 ``` 
+## Example Run:
 
-#### WebRecon2 Example:
-```
-$ time ./WebRecon2 Disney
 
-real    429m50.439s
-user    193m1.402s
-sys     127m16.564s
 
-$ wc -l ./Programs/Disney/03-29-2023/final_list_unique.out
-8496 ./Programs/Disney/03-29-2023/final_list_unique.out
-```
-* Unique Results - 8496
-* Run Time: 7 Hours 
-
-* will update with more tests in future
+## Future Plans:
+* add a function to check that the neeeded tools exists within $PATH and throw errors if not.
 
 ## Resources: 
 
