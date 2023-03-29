@@ -424,6 +424,7 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 	
 	cmd := exec.Command("bash", "-c", "subfinder -dL ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/subfinder.out")
 	stdout, err := cmd.StdoutPipe()
+	stderr, _ := cmd.StderrPipe()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -433,10 +434,11 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 
 	count := 0
 	scanner := bufio.NewScanner(stdout)
+	scanner2 := bufio.NewScanner(stderr)
 	go func() {
 		for scanner.Scan() {
 			count += 1 
-			//log.Printf(strconv.Itoa(count) + " subfinder out: %s", scanner.Text())
+			log.Printf(strconv.Itoa(count) + " subfinder out: %s", scanner.Text())
 		}
 		wg2.Done()
 	} ()
