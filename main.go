@@ -386,7 +386,7 @@ func RunAmass(program_name string, date string, wg *sync.WaitGroup) {
 	io := style.NewGoStyler(in, out)
 	out.Writeln("\t<info>INFO - Executing Amass against " + program_name + "</info>")
 	
-	cmd := exec.Command("bash", "-c", "amass enum -timeout 2 -df ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/amass.out")
+	cmd := exec.Command("bash", "-c", "amass enum -timeout 45 -df ./Programs/" + program_name + "/recon-data/domains.txt -o ./Programs/" + program_name + "/" + date + "/amass.out")
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
 		log.Fatal(err)
@@ -473,7 +473,7 @@ func RunShuffleDNS(program_name string, date string, domain string, mode int, wg
 		//out.Writeln("shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out")
 		//cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out")// -o " + program_path + domain + "-shuffledns.out")
 		//puredns testing
-		out.Writeln("puredns resolve " + program_path + domain + "-shuffledns.out -r ./wordlists/resolvers.txt")
+		//out.Writeln("puredns resolve " + program_path + domain + "-shuffledns.out -r ./wordlists/resolvers.txt")
 		cmd = exec.Command("bash", "-c", "puredns resolve " + program_path + domain + "-subdomains.out -r ./wordlists/resolvers.txt")
 		//create output file
 		output_file, _ = os.OpenFile(program_path + domain + "-shuffledns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
@@ -481,7 +481,7 @@ func RunShuffleDNS(program_name string, date string, domain string, mode int, wg
 		//out.Writeln("shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")
 		//cmd = exec.Command("bash", "-c", "shuffledns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")// + program_path + domain + "-dnsgen-shuffledns.out")
 		//puredns testing
-		out.Writeln("puredns resolve " + program_path + domain + "-dnsgen.out -r ./wordlists/resolvers.txt")
+		//out.Writeln("puredns resolve " + program_path + domain + "-dnsgen.out -r ./wordlists/resolvers.txt")
 		cmd = exec.Command("bash", "-c", "puredns resolve " + program_path + domain + "-dnsgen.out -r ./wordlists/resolvers.txt")
 		output_file, _ = os.OpenFile(program_path + domain + "-dnsgen-shuffledns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	}	
