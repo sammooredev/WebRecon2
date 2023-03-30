@@ -82,12 +82,11 @@ If you wish to test WebRecon2 with a quickstart, the [Starbucks](https://hackero
 ```
 $ ./WebRecon2 Starbucks
 ``` 
-## Example Run:
-
 
 
 ## Future Plans:
 * add a function to check that the neeeded tools exists within $PATH and throw errors if not.
+* will write a blog post explaining the tool and some use cases in more detail soon.
 
 ## Resources: 
 
