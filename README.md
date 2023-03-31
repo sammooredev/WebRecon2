@@ -83,11 +83,16 @@ If you wish to test WebRecon2 with a quickstart, the [Starbucks](https://hackero
 $ ./WebRecon2 Starbucks
 ``` 
 ## Usage Demo
-![WebRecon2 Usage Demo](./assets/webrecon-demo.gif "WebRecon2 Usage Demo")
 
+![WebRecon2 Usage Demo](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhGVYfrFaMoriqQGmMoFgEUEA9_-lsP2CMUfJmRyk7vEVL-9HIIJPBI2eaegMmHsCR5QFXvVOCtssOewwYH8yCmu7l-qA2Nf0e6xyluoOQzMygftsqrK02qGK6Yln7uD3BD1yac4nHu8VutxcuYaRywzB5vWrSopjEZbGB4ik-sbFD4UW5AtSBlTg/s800/webrecon-demo.gif " WebRecon2 Usage Demo") 
+![WebRecon2 Usage Demo](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjA8d-rDQc0d9_XDVfYEmAVnI8ARucBVNaVV1OTlcYJzmoV53WO1urT4uegzwXPY_rS4ZP-V6J-OaDbBGOVL8bxsXAfQf-FgQMpN6-BH3Y4cCM6VYPTAXCXwToJexcBmWi8pz4nENwGz26QoKGhwM1-XBxj09ysz4tMfNXNozTRhGDCkLdWnveMXg/w615-h225/1.png "WebRecon2 Usage Demo")
+![WebRecon2 Usage Demo](https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgNvlfu8o_fWNE9VlIKP_BA0cX0QRK0Z5AjTSylQOwyFgeXF__4kQ_7GfIKk7rvuMdDydtlXwyuihdYe5b6uHkFLkREev28VTUC9uoYIZoZmhD7w3cQytI1xHW-Vv-GobIR0Oo_2eIMHSpimSkjth7nRYuNpYr8l6AeOD-iBQWYZiiKVXRNkBtGCQ/w599-h47/2.png "WebRecon2 Usage Demo")
+* 1 hour 32 minutes run time
+* 2570 unique hosts found
 
 ## Future Plans:
 * add a function to check that the neeeded tools exists within $PATH and throw errors if not.
+* tool will extract subdomains from rapid7 fdns data zip if its placed into wordlists directory
 * will write a blog post explaining the tool and some use cases in more detail soon.
 
 ## Resources: 
