@@ -81,6 +81,9 @@ The output folder will ultimately be structured like so:
 If you wish to test WebRecon2 with a quickstart, the [Starbucks](https://hackerone.com/starbucks?type=team) program structure is included in the repo. Just do the following after installing and building. It will test a single domain (starbucks.com):
 ```
 $ ./WebRecon2 Starbucks
+
+## Usage Demo
+![WebRecon2 Usage Demo](./assets/webrecon-demo.gif "WebRecon2 Usage Demo")
 ``` 
 
 
