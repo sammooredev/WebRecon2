@@ -1,7 +1,5 @@
 # WebRecon2
 
-A re-write of WebRecon. It's faster and prettier.
-
 Shoutout [Ethan](https://github.com/applevac) for his help in optimizing the code and sharing his wealth of programming knowledge. He was a big help in producing WebRecon2.
 
 ## Dependencies
@@ -21,14 +19,13 @@ $ cd WebRecon2
 3. you have two options, build the binary, or run with "go run":
 ```
 $ go build 
-$ ./WebRecon2
+$ ./WebRecon
 ```
 ```
 $ go run main.go
 ```
 
-## Tools that must be reachable within your $PATH:
-WebRecon2 utilizes the best tools available, each great at their own job, and combines them into a single script to automate a workflow that would typically be followed manually when performing subdomain enumeration against a bug bounty program. Each of the tools listed below will need to be accessible within your $PATH for WebRecon2 to work. 
+### Tools that must be reachable within your $PATH:
 
 Tools for subdomain enumeration and generation:
 1. [amass](https://github.com/OWASP/Amass)
@@ -41,22 +38,29 @@ Tools for DNS bruteforcing (confirming that enumerated/generated subdomains actu
 
 
 ## What does this tool do?
+WebRecon2 utilizes the best tools available, each great at their own job, and combines them into a single script to automate a workflow that would typically be followed manually when performing subdomain enumeration. 
+
 1. takes input as a list of domains (/Programs/\<program name>/recon-data/domains.txt)
     * foo.com 
     * bar.com
     * foo.bar.com
     * . . .
-2. runs amass, subfinder & prepends a lot of words to each domain defined in the domains.txt file
+    
+2. runs amass, subfinder against the domains & generates potential subdomains by prepending each word in "./wordlists/httparchive_subddomains_2022_12_28.txt" to each domain defined in the domains.txt file. This creates millions of potential subdomains. Currently you'll have to edit the code to change the wordlist thats used, but I plan to add an update feature in the future to pull the most recent files from https://wordlists.assetnote.io/. 
 
-3. combines the results of these 3 jobs into one file
+3. After amass, subfinder, and subdomains generation are complete, it combines the results of these 3 jobs into one file (all_enumerated_subdomains_combined_unique.txt)
 
-4. Multiple instances of puredns are run concurrently to validate the enumerated/generated subdomains. 
+4. A new directory is created for each domain in the domains.txt file, within each new directory the subdomains of that domain are placed into a new file (\<domain>-subdomains.out). 
+
+4. One instance of puredns is run for each entry in domains.txt file, unless a subdomain of a domain already included in the domains.txt file is present. In the case that the domains.txt file includes entries as shown in step 1 (bar.com & foo.bar.com), only one instance of puredns is ran using the higher level domain (bar.com) as input. 
 
 5. The output of puredns (a list of subdomains that had DNS records), are passed to dnsgen. This generates a new file containing permutations of puredns' output.
 
-6. puredns is then ran against the dnsgen output, to unconver even more subdomains.
+6. Puredns is then ran against the dnsgen output, to unconver even more subdomains.
 
-7. outputs a directory for each domain defined in domains.txt, containing results. 
+7. Outputs a directory for each domain defined in domains.txt, containing results. A list of all unqiue subdomains for each domain combined is outputted as "final_list_unique.out"
+
+Each tool generates a file as output and it isnt trashed by WebRecon2 after it's done running. 
 
 ## How to use
 
@@ -70,9 +74,9 @@ $ mkdir -p ./Programs/Starbucks/recon-data
 ```
 $ vim ./Programs/Starbucks/recon-data/domains.txt
 ```  
-3. Run WebRecon2.
+3. Run WebRecon.
 ```
-$ ./WebRecon2 Starbucks
+$ ./WebRecon Starbucks
 ```  
 Once WebRecon2 has started running, it will create a directory using the current date to store its data.
 The output folder will ultimately be structured like so:
@@ -80,7 +84,7 @@ The output folder will ultimately be structured like so:
 
 If you wish to test WebRecon2 with a quickstart, the [Starbucks](https://hackerone.com/starbucks?type=team) program structure is included in the repo. Just do the following after installing and building. It will test a single domain (starbucks.com):
 ```
-$ ./WebRecon2 Starbucks
+$ ./WebRecon Starbucks
 ``` 
 ## Usage Demo
 
@@ -91,9 +95,8 @@ $ ./WebRecon2 Starbucks
 * 2570 unique hosts found
 
 ## Future Plans:
-* add a function to check that the neeeded tools exists within $PATH and throw errors if not.
-* tool will extract subdomains from rapid7 fdns data zip if its placed into wordlists directory
-* will write a blog post explaining the tool and some use cases in more detail soon.
+* add a function to check that the needed tools exists within $PATH and throw errors if not.
+* use rapid7 fdns data 
 
 ## Resources: 
 
