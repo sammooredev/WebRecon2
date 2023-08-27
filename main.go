@@ -30,7 +30,7 @@ func main() {
 	var mute sync.Mutex   // to establish queue for writing using multiple threads
 
 	// print title
-	io.Title("WebRecon - subdomain enooooooooomeration")
+	io.Title("WebRecon - salutations to the enumeration nation")
 
 	// check user inputted an argument (./WebRecon arguement). if not, print help & exit, else continue
 	wrutils.CheckUserInput()
@@ -60,7 +60,7 @@ func main() {
 
 	go wrtools.PotentialSubdomainGeneratorMain(domains, arg1, date, &wg, &mute)
 	wg.Add(1)
-	go wrtools.RunAmass(arg1, date, 1, &wg)
+	go wrtools.RunAmass(arg1, date, 45, &wg)
 	wg.Add(1)
 	go wrtools.RunSubfinder(arg1, date, &wg)
 	wg.Add(1)
