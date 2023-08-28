@@ -1,6 +1,6 @@
 # WebRecon2
 
-Shoutout [Ethan](https://github.com/applevac) for his help in optimizing the code and sharing his wealth of programming knowledge. He was a big help in producing WebRecon2.
+Yet Another Enumeration Tool
 
 ## Dependencies
 ### Golang
