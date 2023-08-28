@@ -1,6 +1,6 @@
 # WebRecon2
 
-Yet Another Enumeration Tool
+Yet Another Enumeration Tool (YAML)
 
 ## Dependencies
 ### Golang
