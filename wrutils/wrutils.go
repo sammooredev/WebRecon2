@@ -16,45 +16,6 @@ import (
 	"github.com/jpillora/go-tld"
 )
 
-// SHELL SYNTAX FUNCTIONS
-// function to print help
-func PrintHelp() {
-	out := output.NewConsoleOutput(true, nil)
-	out.Writeln("<b>to run WebRecon, run the following commands. replace \\<name> with the name of the directory for the program you're testing.\n\n<comment>\t1. Create a directory for the test</comment>\n\t\t<info>$ mkdir -p ./Programs/\\<name>/recon-data\n</info>\n\t<comment>2. Create a domains.txt file containing the domains to test</comment>\n\t\t<info> $ vim ./Programs/\\<name>/recon-data/domains.txt</info>\n\n\t\t<info>NOTE - Each domain should be on a newline:\n\t\t\tfoo.com\n\t\t\tbar.com</info>\n\n\t<comment>3. Start enumeration on the program you set up</comment>\n\t\t<info>$ ./WebRecon \\<name></info>    * Note: \\<name> is the name of the directory in ./Programs/\\<name>")
-	os.Exit(1)
-}
-
-// / function to check whether user input contains a value.
-func CheckUserInput() {
-	if len(os.Args) != 2 {
-		PrintHelp()
-	}
-}
-
-// function to check whether a domains list exists. if it does, it prints out the domains to be in that file. Return a string array of the domains
-func CheckDomainsList(arg1 string) []string {
-	out := output.NewConsoleOutput(true, nil)
-	var domains []string
-	domains_list, err := os.Open("./Programs/" + arg1 + "/recon-data/domains.txt")
-	if err != nil {
-		out.Writeln("\n<error>ERROR! - Did you add a domains.txt file to ./Programs/" + arg1 + "/recon-data/domains.txt </error>")
-		os.Exit(1)
-	} else {
-		defer domains_list.Close()
-		scanner := bufio.NewScanner(domains_list)
-		scanner.Split(bufio.ScanLines)
-		for scanner.Scan() {
-			domains = append(domains, scanner.Text())
-		}
-		out.Writeln("\n<info><b>Domains to be tested: </info></b>")
-		for _, a := range domains {
-			out.Writeln("\t<comment>" + a + "</comment>")
-		}
-		out.Writeln("\n")
-	}
-	return domains
-}
-
 // HELPER FUNCTIONS FOR SUBDOMAIN PROCESSING
 /* Opens a wordlist file and places each line into a string array. */
 func WordlistToArray(wordlist_file_path string) []string {
@@ -154,11 +115,14 @@ func BuildNewProgramDirectory(program_name string, date string, domains []string
 }
 
 // function to combine files in the scan folder
-func CombineFiles(program_name string, date string) {
+func CombineFiles(tools []string, program_name string, date string) {
 	out := output.NewConsoleOutput(true, nil)
 	// open output file (file of all subdomains combined)
 	data_directory := "./Programs/" + program_name + "/" + date + "/"
-	files := []string{data_directory + "sub-generator.out", data_directory + "amass.out", data_directory + "subfinder.out"} // add more entries here to combine more files
+	files := []string{}
+	for _, v := range tools {
+		files = append(files, data_directory+v+".out")
+	}
 	var buf bytes.Buffer
 	for _, file := range files {
 		b, err := os.ReadFile(file)
