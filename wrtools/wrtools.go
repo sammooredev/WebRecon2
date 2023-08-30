@@ -166,11 +166,17 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 }
 
 // Bruteforce reverse DNS resolving
-func RunPuredns(program_name string, date string, domain string, mode int, wg *sync.WaitGroup) {
+func RunPuredns(program_name string, date string, domain string, mode int, wildcard bool, wg *sync.WaitGroup) {
 	out := output.NewConsoleOutput(true, nil)
 	out.Writeln("\t<info>INFO - Executing puredns against " + domain + "</info>")
 
 	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/"
+
+	// get wildcard flag
+	wildflag := ""
+	if !wildcard {
+		wildflag = "--skip-wildcard-filter"
+	}
 
 	//select mode (changes cmd command value dependenant on mode value passed as arguement. 0 = run against enumerated, 1 = run against dnsgen output)
 	var cmd *exec.Cmd
@@ -180,7 +186,7 @@ func RunPuredns(program_name string, date string, domain string, mode int, wg *s
 		//cmd = exec.Command("bash", "-c", "puredns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out")// -o " + program_path + domain + "-puredns.out")
 		//puredns testing
 		//out.Writeln("puredns resolve " + program_path + domain + "-puredns.out -r ./wordlists/resolvers.txt")
-		cmd = exec.Command("bash", "-c", "puredns resolve "+program_path+domain+"-subdomains.out -r ./wordlists/resolvers.txt")
+		cmd = exec.Command("bash", "-c", "puredns resolve "+program_path+domain+"-subdomains.out --rate-limit-trusted 1000 "+wildflag+" -r ./wordlists/resolvers.txt")
 		//create output file
 		output_file, _ = os.OpenFile(program_path+domain+"-puredns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	} else {
@@ -188,7 +194,7 @@ func RunPuredns(program_name string, date string, domain string, mode int, wg *s
 		//cmd = exec.Command("bash", "-c", "puredns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")// + program_path + domain + "-dnsgen-puredns.out")
 		//puredns testing
 		//out.Writeln("puredns resolve " + program_path + domain + "-dnsgen.out -r ./wordlists/resolvers.txt")
-		cmd = exec.Command("bash", "-c", "puredns resolve "+program_path+domain+"-dnsgen.out -r ./wordlists/resolvers.txt")
+		cmd = exec.Command("bash", "-c", "puredns resolve "+program_path+domain+"-dnsgen.out --rate-limit-trusted 1000 "+wildflag+" -r ./wordlists/resolvers.txt")
 		output_file, _ = os.OpenFile(program_path+domain+"-dnsgen-puredns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	}
 

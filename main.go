@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -32,8 +31,9 @@ func PrintHelp() {
 		"\t\t\tbar.com</info>\n\n" +
 		"\t<comment>3. Start enumeration on the program you set up</comment>\n" +
 		"\t\t<info>$ ./WebRecon [flags] \\<name></info>    * Note: \\<name> is the name of the directory in ./Programs/\\<name>\n" +
-		"\t\t\t<info>-atimeout     Maximum timeout for Amass (in minutes). Default 45 minutes</info>\n" +
-		"\t\t\t<info>-usetools     Comma-separated list of enum tools. Default all (subfinder,amass,sub-generator)</info>\n" +
+		"\t\t\t<info>-atimeout    Maximum timeout for Amass (in minutes). Default 45 minutes</info>\n" +
+		"\t\t\t<info>-tools       Comma-separated list of enum tools. Default all (subfinder,amass,sub-generator)</info>\n" +
+		"\t\t\t<info>-wildcard    When enabled, runs PureDNS with wildcard filtering on (large time sink). Default false</info>\n" +
 		"")
 	os.Exit(1)
 }
@@ -62,11 +62,12 @@ func CheckDomainsList(arg1 string) []string {
 	return domains
 }
 
-func ParseFlags() (uint, []string, string) {
+func ParseFlags() (uint, []string, bool, string) {
 	// setup flags
 	out := output.NewConsoleOutput(true, nil)
 	atimeout := flag.Uint("atimeout", 45, "Max timeout to use for Amass")
-	tools := flag.String("usetools", "subfinder,amass,sub-generator", "Comma-separated list of enum tools (default subfinder,amass,sub-generator)")
+	tools := flag.String("tools", "subfinder,amass,sub-generator", "Comma-separated list of enum tools (default subfinder,amass,sub-generator)")
+	wildcard := flag.Bool("wildcard", false, "Whether or not to run PureDNS with wildcard filtering on")
 
 	// check user inputted an argument (./WebRecon argument). if not, print help & exit, else continue
 	flag.Parse()
@@ -79,17 +80,17 @@ func ParseFlags() (uint, []string, string) {
 	if len(toolsList) > 0 && len(toolsList) < 4 {
 		validEntries := []string{"subfinder", "amass", "sub-generator"}
 		for _, v := range toolsList {
-			if !slices.Contains(validEntries, v) {
-				out.Writeln("\n<error>ERROR! - Invalid tool " + v + "supplied.</error>")
+			if !wrutils.SliceContainsString(validEntries, v) {
+				out.Writeln("\n<error>ERROR! - Invalid tool " + v + " supplied.</error>")
 				os.Exit(1)
 			}
 		}
 	} else {
-		out.Writeln("\n<error>ERROR! - Too many or no tools in list supplied to -usetools flags. </error>")
+		out.Writeln("\n<error>ERROR! - Too many or no tools in list supplied to -tools flags. </error>")
 		os.Exit(1)
 	}
 
-	return *atimeout, toolsList, flag.Args()[0]
+	return *atimeout, toolsList, *wildcard, flag.Args()[0]
 }
 
 // MAIN
@@ -108,7 +109,7 @@ func main() {
 	io.Title("WebRecon - salutations to the enumeration nation")
 
 	// get user input, including amass timeout and name of program
-	atimeout, tools, arg1 := ParseFlags()
+	atimeout, tools, wildcard, arg1 := ParseFlags()
 
 	// get full tool run time
 	start_time := time.Now()
@@ -131,15 +132,15 @@ func main() {
 	// Phase 1: subdomain generation. - generate subdomains, run amass, run subfinder, run X simultaneously.
 	///
 
-	if slices.Contains(tools, "sub-generator") {
+	if wrutils.SliceContainsString(tools, "sub-generator") {
 		go wrtools.PotentialSubdomainGeneratorMain(domains, arg1, date, &wg, &mute)
 		wg.Add(1)
 	}
-	if slices.Contains(tools, "amass") {
+	if wrutils.SliceContainsString(tools, "amass") {
 		go wrtools.RunAmass(arg1, date, int(atimeout), &wg)
 		wg.Add(1)
 	}
-	if slices.Contains(tools, "subfinder") {
+	if wrutils.SliceContainsString(tools, "subfinder") {
 		go wrtools.RunSubfinder(arg1, date, &wg)
 		wg.Add(1)
 	}
@@ -164,7 +165,7 @@ func main() {
 	// for each domain in sortedDomain (a list of domains which has redudancies removed)
 	for _, domain := range sortedDomains {
 		// run puredns for the domain - an instance of puredns is ran for each domain as its required for wildcard filtering.
-		go wrtools.RunPuredns(arg1, date, domain, 0, &wg)
+		go wrtools.RunPuredns(arg1, date, domain, 0, wildcard, &wg)
 		wg.Add(1)
 	}
 	wg.Wait()
@@ -201,7 +202,7 @@ func main() {
 	// for each domain in sortedDomain (a list of domains which has redudancies removed)
 	for _, domain := range sortedDomains {
 		// run puredns for the domain - an instance of puredns is ran for each domain as its required for wildcard filtering.
-		go wrtools.RunPuredns(arg1, date, domain, 1, &wg)
+		go wrtools.RunPuredns(arg1, date, domain, 1, wildcard, &wg)
 		wg.Add(1)
 	}
 	wg.Wait()

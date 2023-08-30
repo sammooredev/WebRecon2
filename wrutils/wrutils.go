@@ -16,6 +16,17 @@ import (
 	"github.com/jpillora/go-tld"
 )
 
+// GENERALLY USEFUL FUNCTIONS
+// Searches for string in slice, returns whether successful.
+func SliceContainsString(slice []string, term string) bool {
+	for _, v := range slice {
+		if v == term {
+			return true
+		}
+	}
+	return false
+}
+
 // HELPER FUNCTIONS FOR SUBDOMAIN PROCESSING
 /* Opens a wordlist file and places each line into a string array. */
 func WordlistToArray(wordlist_file_path string) []string {
