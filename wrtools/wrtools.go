@@ -173,7 +173,7 @@ func RunPuredns(program_name string, date string, domain string, mode int, wildc
 	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/"
 
 	// get wildcard flag
-	wildflag := ""
+	wildflag := "--wildcard-batch 1500000"
 	if !wildcard {
 		wildflag = "--skip-wildcard-filter"
 	}
