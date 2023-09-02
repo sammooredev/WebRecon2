@@ -165,16 +165,15 @@ func CombineFiles(tools []string, program_name string, date string) {
 }
 
 // function to combine all valid enumerated subdomains into one file "all_valid_subdomains_discovered.txt"
-func CreateFileOfAllValidSubdomainsCombined(program_name string, date string, domains []string) {
+func CreateFileOfAllValidSubdomainsCombined(program_name string, date string) {
 	out := output.NewConsoleOutput(true, nil)
 	// create string array of "<domain>-dnsgen-puredns.out" and "<domain>-puredns.out" file paths for each domain that was tested
 	var files []string
-	for _, domain := range domains {
-		data_directory := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/" + domain + "-dnsgen-puredns.out"
-		data_directory2 := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/" + domain + "-puredns.out"
-		files = append(files, data_directory)
-		files = append(files, data_directory2)
-	}
+
+	data_directory1 := "./Programs/" + program_name + "/" + date + "/puredns-stage-1.out"
+	data_directory2 := "./Programs/" + program_name + "/" + date + "/dnsgen-puredns.out"
+	files = append(files, data_directory1)
+	files = append(files, data_directory2)
 
 	// create arbitrary sized buffer for data from files. then for each file, read its contents, write to buffer
 	var buf bytes.Buffer

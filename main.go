@@ -106,7 +106,7 @@ func main() {
 	var mute sync.Mutex   // to establish queue for writing using multiple threads
 
 	// print title
-	io.Title("WebRecon - salutations to the enumeration nation")
+	io.Title("WebRecon - We Love Katamari!")
 
 	// get user input, including amass timeout and name of program
 	atimeout, tools, wildcard, arg1 := ParseFlags()
@@ -149,11 +149,11 @@ func main() {
 	// this function combines all the files within the date directory for the scan (./Programs/Google/01-25-23/*) into one file, and removes duplicate entries. outputs the files: "all_enumerated_subdomains_combined.txt" & "all_enumerated_subdomains_combined_unique.txt"
 	wrutils.CombineFiles(tools, arg1, date)
 	// this function separates "all_enumerated_subdomains_combined_unique.txt" into separate files by top-level-domain and places them into ./Programs/<program>/<date>/top-level-domain/<top-level-domain>/<top-level-domain>-subdomains.txt
-	start1 := time.Now()
+	/* start1 := time.Now()
 	sortedDomains := wrutils.SeparateAllSubdomainsIntoSeparateFolders(arg1, date, domains)
 	time_elapsed1 := time.Now().Sub(start1)
 	str := fmt.Sprintf("Separating subdomains Done! Finished in %v.", time_elapsed1)
-	io.Success(str)
+	io.Success(str) */
 
 	///
 	// Phase 2: validate subdomains exist via bruteforcing reverse dns lookups
@@ -163,12 +163,10 @@ func main() {
 	// start clock to get runtime
 	start2 := time.Now()
 	// for each domain in sortedDomain (a list of domains which has redudancies removed)
-	for _, domain := range sortedDomains {
-		// run puredns for the domain - an instance of puredns is ran for each domain as its required for wildcard filtering.
-		go wrtools.RunPuredns(arg1, date, domain, 0, wildcard, &wg)
-		wg.Add(1)
-	}
-	wg.Wait()
+
+	// run puredns for the domain - an instance of puredns is ran for each domain as its required for wildcard filtering.
+	wrtools.RunPuredns(arg1, date, 0, wildcard)
+
 	// get time elapsed
 	time_elapsed2 := time.Now().Sub(start2)
 	// print out the commands completed and the runtime
@@ -181,12 +179,10 @@ func main() {
 	io.Section("Starting generating permutations via dnsgen for " + arg1)
 	// start clock to get runtime
 	start3 := time.Now()
-	for _, domain := range sortedDomains {
-		//run dnsgen for each puredns output
-		go wrtools.RunDnsgen(arg1, date, domain, &wg)
-		wg.Add(1)
-	}
-	wg.Wait()
+
+	//run dnsgen for each puredns output
+	wrtools.RunDnsgen(arg1, date)
+
 	time_elapsed3 := time.Now().Sub(start3)
 	// print out the commands completed and the runtime
 	str3 := fmt.Sprintf("Permutation generation Done! Finished in %v.", time_elapsed3)
@@ -200,12 +196,10 @@ func main() {
 
 	start4 := time.Now()
 	// for each domain in sortedDomain (a list of domains which has redudancies removed)
-	for _, domain := range sortedDomains {
-		// run puredns for the domain - an instance of puredns is ran for each domain as its required for wildcard filtering.
-		go wrtools.RunPuredns(arg1, date, domain, 1, wildcard, &wg)
-		wg.Add(1)
-	}
-	wg.Wait()
+
+	// run puredns for the domain - an instance of puredns is ran for each domain as its required for wildcard filtering.
+	wrtools.RunPuredns(arg1, date, 1, wildcard)
+
 	// get time elapsed
 	time_elapsed4 := time.Now().Sub(start4)
 	// print out the commands completed and the runtime
@@ -216,7 +210,7 @@ func main() {
 	// Phase 5: Completion and clean up. Combine dnsgen outputs, place into <date> directory for test. print a goodbye message
 	///
 	io.Section("All enumeration and reverse DNS bruteforcing complete. Creating output files for " + arg1 + "...")
-	wrutils.CreateFileOfAllValidSubdomainsCombined(arg1, date, sortedDomains)
+	wrutils.CreateFileOfAllValidSubdomainsCombined(arg1, date)
 
 	fullruntime_elapsed := time.Now().Sub(start_time)
 	// print out the commands completed and the runtime

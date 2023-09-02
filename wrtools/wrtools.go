@@ -166,14 +166,14 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 }
 
 // Bruteforce reverse DNS resolving
-func RunPuredns(program_name string, date string, domain string, mode int, wildcard bool, wg *sync.WaitGroup) {
+func RunPuredns(program_name string, date string, mode int, wildcard bool) {
 	out := output.NewConsoleOutput(true, nil)
-	out.Writeln("\t<info>INFO - Executing puredns against " + domain + "</info>")
+	out.Writeln("\t<info>INFO - Executing puredns against " + program_name + "</info>")
 
-	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/"
+	program_path := "./Programs/" + program_name + "/" + date + "/"
 
 	// get wildcard flag
-	wildflag := "--wildcard-batch 1500000"
+	wildflag := "--wildcard-batch 1250000"
 	if !wildcard {
 		wildflag = "--skip-wildcard-filter"
 	}
@@ -186,16 +186,16 @@ func RunPuredns(program_name string, date string, domain string, mode int, wildc
 		//cmd = exec.Command("bash", "-c", "puredns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out")// -o " + program_path + domain + "-puredns.out")
 		//puredns testing
 		//out.Writeln("puredns resolve " + program_path + domain + "-puredns.out -r ./wordlists/resolvers.txt")
-		cmd = exec.Command("bash", "-c", "puredns resolve "+program_path+domain+"-subdomains.out --rate-limit-trusted 1000 "+wildflag+" -r ./wordlists/resolvers.txt")
+		cmd = exec.Command("bash", "-c", "puredns resolve "+program_path+"all_enumerated_subdomains_combined_unique.txt --rate-limit-trusted 1000 "+wildflag+" -r ./wordlists/resolvers.txt")
 		//create output file
-		output_file, _ = os.OpenFile(program_path+domain+"-puredns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		output_file, _ = os.OpenFile(program_path+"puredns-stage-1.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	} else {
 		//out.Writeln("puredns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")
 		//cmd = exec.Command("bash", "-c", "puredns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-dnsgen.out")// + program_path + domain + "-dnsgen-puredns.out")
 		//puredns testing
 		//out.Writeln("puredns resolve " + program_path + domain + "-dnsgen.out -r ./wordlists/resolvers.txt")
-		cmd = exec.Command("bash", "-c", "puredns resolve "+program_path+domain+"-dnsgen.out --rate-limit-trusted 1000 "+wildflag+" -r ./wordlists/resolvers.txt")
-		output_file, _ = os.OpenFile(program_path+domain+"-dnsgen-puredns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		cmd = exec.Command("bash", "-c", "puredns resolve "+program_path+"dnsgen.out --rate-limit-trusted 1000 "+wildflag+" -r ./wordlists/resolvers.txt")
+		output_file, _ = os.OpenFile(program_path+"dnsgen-puredns.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	}
 
 	stdout, _ := cmd.StdoutPipe()
@@ -224,17 +224,17 @@ func RunPuredns(program_name string, date string, domain string, mode int, wildc
 	for _, line := range purednsout {
 		output_file.WriteString(line)
 	}
-	out.Writeln("\t<info>INFO - Puredns Complete for " + domain + ". Found " + strconv.Itoa(count) + " valid subdomains. </info>")
-	wg.Done()
+	out.Writeln("\t<info>INFO - Puredns Complete - Found " + strconv.Itoa(count) + " valid subdomains. </info>")
 }
 
 // Generates permutations of validated subdomains from puredns output
-func RunDnsgen(program_name string, date string, domain string, wg *sync.WaitGroup) {
+func RunDnsgen(program_name string, date string) {
 	out := output.NewConsoleOutput(true, nil)
-	out.Writeln("\t<info>INFO - Executing dnsgen against " + domain + "</info>")
+	out.Writeln("\t<info>INFO - Executing dnsgen </info>")
 
-	program_path := "./Programs/" + program_name + "/" + date + "/top-level-domains/" + domain + "/"
-	cmd := exec.Command("bash", "-c", "dnsgen "+program_path+domain+"-puredns.out | tee -a "+program_path+domain+"-dnsgen.out")
+	program_path := "./Programs/" + program_name + "/" + date + "/"
+
+	cmd := exec.Command("bash", "-c", "dnsgen "+program_path+"puredns-stage-1.out | tee -a "+program_path+"dnsgen.out")
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -260,6 +260,5 @@ func RunDnsgen(program_name string, date string, domain string, wg *sync.WaitGro
 
 	wg2.Wait()
 	cmd.Wait() //bug where this also prints 0
-	out.Writeln("\t<info>INFO - dnsgen Complete for " + domain + ". Generated " + strconv.Itoa(count) + " potential subdomains. </info>")
-	wg.Done()
+	out.Writeln("\t<info>INFO - dnsgen Complete - Generated " + strconv.Itoa(count) + " potential subdomains. </info>")
 }
