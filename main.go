@@ -106,7 +106,7 @@ func main() {
 	var mute sync.Mutex   // to establish queue for writing using multiple threads
 
 	// print title
-	io.Title("WebRecon - We Love Katamari!")
+	io.Title("WebRecon - Wee woo wee woo!")
 
 	// get user input, including amass timeout and name of program
 	atimeout, tools, wildcard, arg1 := ParseFlags()
