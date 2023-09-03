@@ -147,7 +147,7 @@ func main() {
 	wg.Wait()
 
 	// this function combines all the files within the date directory for the scan (./Programs/Google/01-25-23/*) into one file, and removes duplicate entries. outputs the files: "all_enumerated_subdomains_combined.txt" & "all_enumerated_subdomains_combined_unique.txt"
-	//wrutils.CombineFiles(tools, arg1, date)
+	wrutils.CombineFiles(tools, arg1, date)
 	// this function separates "all_enumerated_subdomains_combined_unique.txt" into separate files by top-level-domain and places them into ./Programs/<program>/<date>/top-level-domain/<top-level-domain>/<top-level-domain>-subdomains.txt
 	/* start1 := time.Now()
 	sortedDomains := wrutils.SeparateAllSubdomainsIntoSeparateFolders(arg1, date, domains)

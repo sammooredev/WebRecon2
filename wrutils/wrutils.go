@@ -127,7 +127,7 @@ func BuildNewProgramDirectory(program_name string, date string, domains []string
 
 // function to combine files in the scan folder
 func CombineFiles(tools []string, program_name string, date string) {
-	out := output.NewConsoleOutput(true, nil)
+
 	// open output file (file of all subdomains combined)
 	data_directory := "./Programs/" + program_name + "/" + date + "/"
 	files := []string{}
@@ -149,7 +149,7 @@ func CombineFiles(tools []string, program_name string, date string) {
 		log.Fatal(err)
 	}
 	// remove duplicates and re-write
-	wordlist_lines := WordlistToArray(data_directory + "all_enumerated_subdomains_combined.txt")
+	/* wordlist_lines := WordlistToArray(data_directory + "all_enumerated_subdomains_combined.txt")
 	unique_wordlist := removeDuplicateString(wordlist_lines)
 
 	//create output file
@@ -161,7 +161,7 @@ func CombineFiles(tools []string, program_name string, date string) {
 
 	for _, line := range unique_wordlist {
 		output_file.WriteString(line + "\n")
-	}
+	} */
 }
 
 // function to combine all valid enumerated subdomains into one file "all_valid_subdomains_discovered.txt"
