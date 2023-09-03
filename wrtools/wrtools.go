@@ -186,7 +186,7 @@ func RunPuredns(program_name string, date string, mode int, wildcard bool) {
 		//cmd = exec.Command("bash", "-c", "puredns -t 50000 -r ./wordlists/resolvers.txt -d " + domain + " -list " + program_path + domain + "-subdomains.out")// -o " + program_path + domain + "-puredns.out")
 		//puredns testing
 		//out.Writeln("puredns resolve " + program_path + domain + "-puredns.out -r ./wordlists/resolvers.txt")
-		cmd = exec.Command("bash", "-c", "puredns resolve "+program_path+"all_enumerated_subdomains_combined_unique.txt --rate-limit-trusted 1000 "+wildflag+" -r ./wordlists/resolvers.txt")
+		cmd = exec.Command("bash", "-c", "puredns resolve "+program_path+"all_enumerated_subdomains_combined.txt --rate-limit-trusted 1000 "+wildflag+" -r ./wordlists/resolvers.txt")
 		//create output file
 		output_file, _ = os.OpenFile(program_path+"puredns-stage-1.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	} else {
