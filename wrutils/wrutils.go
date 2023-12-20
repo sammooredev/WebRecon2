@@ -6,6 +6,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"os/exec"
 	"regexp"
 	"sort"
 	"strings"
@@ -17,6 +18,16 @@ import (
 )
 
 // GENERALLY USEFUL FUNCTIONS
+func VerifyDependencies() {
+	commands := []string{"amass", "subfinder", "puredns", "dnsgen"}
+	for _, command := range commands {
+		_, err := exec.LookPath(command)
+		if err != nil {
+			log.Fatal("Error: dependency '" + command + "' could not be found in your PATH.")
+		}
+	}
+}
+
 // Searches for string in slice, returns whether successful.
 func SliceContainsString(slice []string, term string) bool {
 	for _, v := range slice {
