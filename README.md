@@ -1,14 +1,9 @@
 # WebRecon2
 
-Yet Another Enumeration Tool (YAML)
-
-## Dependencies
-### Golang
-* tested on go1.20
-* ran on unix system
+WebRecon2 efficiently and accurately enumerates subdomains by leveraging a variety of tools against programs in a user-specified scope.
 
 ## Installation
-1. clone the repo:
+1. Clone the repo:
 ```
 $ git clone https://github.com/sammooredev/WebRecon2.git
 ```
@@ -16,7 +11,7 @@ $ git clone https://github.com/sammooredev/WebRecon2.git
 ```
 $ cd WebRecon2
 ```
-3. you have two options, build the binary, or run with "go run":
+3. You have two options; either build the binary, or run with "go run":
 ```
 $ go build 
 $ ./WebRecon
@@ -25,17 +20,15 @@ $ ./WebRecon
 $ go run main.go
 ```
 
+## Dependencies
+### Golang 1.21
+* tested on go1.21
 ### Tools that must be reachable within your $PATH:
-
-Tools for subdomain enumeration and generation:
 1. [amass](https://github.com/OWASP/Amass)
 2. [subfinder](https://github.com/projectdiscovery/subfinder)
 3. [dnsgen](https://github.com/ProjectAnte/dnsgen)
-
-Tools for DNS bruteforcing (confirming that enumerated/generated subdomains actually exist):
-1. [puredns](https://github.com/d3mondev/puredns)
+4. [puredns](https://github.com/d3mondev/puredns)
     * [massdns](https://github.com/blechschmidt/massdns) - binary will also need to be accessible within your $PATH
-
 
 ## What does this tool do?
 WebRecon2 utilizes the best tools available, each great at their own job, and combines them into a single script to automate a workflow that would typically be followed manually when performing subdomain enumeration. 
