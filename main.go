@@ -171,7 +171,7 @@ func main() {
 	wrtools.RunPuredns(arg1, date, 0, wildcard)
 
 	// get time elapsed
-	time_elapsed2 := time.Now().Sub(start2)
+	time_elapsed2 := time.Since(start2)
 	// print out the commands completed and the runtime
 	str2 := fmt.Sprintf("Reverse DNS Bruteforcing Done! Finished in %v.", time_elapsed2)
 	io.Success(str2)
@@ -186,7 +186,7 @@ func main() {
 	//run dnsgen for each puredns output
 	wrtools.RunDnsgen(arg1, date)
 
-	time_elapsed3 := time.Now().Sub(start3)
+	time_elapsed3 := time.Since(start3)
 	// print out the commands completed and the runtime
 	str3 := fmt.Sprintf("Permutation generation Done! Finished in %v.", time_elapsed3)
 	io.Success(str3)
@@ -204,7 +204,7 @@ func main() {
 	wrtools.RunPuredns(arg1, date, 1, wildcard)
 
 	// get time elapsed
-	time_elapsed4 := time.Now().Sub(start4)
+	time_elapsed4 := time.Since(start4)
 	// print out the commands completed and the runtime
 	str4 := fmt.Sprintf("Reverse DNS Bruteforcing against dnsgen ouput done! Finished in %v.", time_elapsed4)
 	io.Success(str4)
@@ -215,7 +215,7 @@ func main() {
 	io.Section("All enumeration and reverse DNS bruteforcing complete. Creating output files for " + arg1 + "...")
 	wrutils.CreateFileOfAllValidSubdomainsCombined(arg1, date)
 
-	fullruntime_elapsed := time.Now().Sub(start_time)
+	fullruntime_elapsed := time.Since(start_time)
 	// print out the commands completed and the runtime
 	str5 := fmt.Sprintf("WebRecon2 Complete! Finished in %v.", fullruntime_elapsed)
 	io.Success(str5)

@@ -35,7 +35,7 @@ func PotentialSubdomainGeneratorMain(domains []string, program string, date stri
 	start := time.Now()
 	programPath := "./Programs/" + program + "/" + date + "/sub-generator.out"
 	total_generated := SubdomainGenerator(domains, divided, programPath, wg, out, mute)
-	time_elapsed := time.Now().Sub(start)
+	time_elapsed := time.Since(start)
 	str := fmt.Sprintf("Generating potential subdomains complete! Finished in %v, generating %d subdomains.", time_elapsed, total_generated)
 	io.Success(str)
 	wg.Done()
@@ -153,14 +153,14 @@ func RunSubfinder(program_name string, date string, wg *sync.WaitGroup) {
 	}()
 
 	if err = cmd.Start(); err != nil {
+		log.Println(scanner2.Text())
 		log.Fatal(err)
-		log.Printf(scanner2.Text())
 	}
 
 	wg2.Wait()
 	cmd.Wait() //bug where this also prints 0
 
-	time_elapsed := time.Now().Sub(start)
+	time_elapsed := time.Since(start)
 	io.Success("Subfinder Enumeration Complete! Finished in " + time_elapsed.String() + ", enumerating " + strconv.Itoa(count) + " subdomains.")
 	wg.Done()
 }

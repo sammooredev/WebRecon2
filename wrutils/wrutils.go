@@ -73,7 +73,7 @@ func removeDuplicateString(strSlice []string) []string {
 func ConditionallyDequeueSubdomains(all_unique_subdomains *[]string, regex *regexp.Regexp) []string {
 	subdomains_sorted_by_tld := make([]string, 0)
 	for range *all_unique_subdomains {
-		if regex.MatchString((*all_unique_subdomains)[0]) == true {
+		if regex.MatchString((*all_unique_subdomains)[0]) {
 			subdomains_sorted_by_tld = append(subdomains_sorted_by_tld, (*all_unique_subdomains)[0])
 			*all_unique_subdomains = (*all_unique_subdomains)[1:]
 		} else {
@@ -265,8 +265,7 @@ func SeparateAllSubdomainsIntoSeparateFolders(program_name string, date string, 
 		}
 		//fmt.Println(regex.MatchString("foo.walt.disney.com"))
 
-		var subdomains_sorted_by_tld []string
-		subdomains_sorted_by_tld = ConditionallyDequeueSubdomains(&all_unique_subdomains, regex)
+		subdomains_sorted_by_tld := ConditionallyDequeueSubdomains(&all_unique_subdomains, regex)
 
 		data_directory := "./Programs/" + program_name + "/" + date + "/"
 		output_file, err := os.OpenFile(data_directory+"top-level-domains/"+top_level_domain+"/"+top_level_domain+"-subdomains.out", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
