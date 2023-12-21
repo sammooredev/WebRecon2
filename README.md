@@ -1,6 +1,6 @@
 # WebRecon2
 
-WebRecon2 efficiently and accurately enumerates subdomains by leveraging a variety of tools against programs in a user-specified scope.
+WebRecon2 efficiently and accurately enumerates subdomains.
 
 ## Installation
 1. Clone the repo:
@@ -33,15 +33,39 @@ $ go run main.go
 ## What does this tool do?
 WebRecon2 utilizes the best tools available, each great at their own job, and combines them into a single script to automate a workflow that would typically be followed manually when performing subdomain enumeration. 
 
-1. takes input as a list of domains (/Programs/\<program name>/recon-data/domains.txt)
-    * foo.com 
-    * bar.com
-    * foo.bar.com
-    * . . .
-    
-2. runs amass, subfinder against the domains & generates potential subdomains by prepending each word in "./wordlists/httparchive_subddomains_2022_12_28.txt" to each domain defined in the domains.txt file. This creates millions of potential subdomains. Currently you'll have to edit the code to change the wordlist thats used, but I plan to add an update feature in the future to pull the most recent files from https://wordlists.assetnote.io/. 
+### Step 1: User Input
+Input is supplied as a list of domains in the *domains.txt* file.
+The *domains.txt* file must be created using the following directory:
+```
+/Programs/<program name>/recon-data/domains.txt
+```
+*<program name>* can be named anthing you like.
+The contents of "domains.txt" should be formatted as follows:
+```
+foo.com 
+bar.com
+foo.bar.com
+```
+Once a *domains.txt* file is created, the tool can be run as so:
+```
+./WebRecon2 <program name>
+```
 
-3. After amass, subfinder, and subdomains generation are complete, it combines the results of these 3 jobs into one file (all_enumerated_subdomains_combined_unique.txt)
+### Step 2: Subdomain Enumeration & Generation
+This is the first stage of WebRecon2. The domains supplied as input are passed to amass & subfinder, where both tools simulataneously perform subdomain enumeration. 
+
+In parallel to subdomain enumeration being performed, a process of subdomain generation also occurs.
+
+Each word in *./wordlists/httparchive_subddomains_2022_12_28.txt* is prepended to each domain from *domains.txt*. This generates millions of potential subdomains. The concept reads weirdly, so consider this graphic to understand the process:
+
+```
+insert graphic
+
+```
+
+Currently you'll have to edit the code to change the wordlist thats used, but a plan to add an update feature in the future to pull the most recent files from https://wordlists.assetnote.io/. 
+
+Upon completion of the subdomain enumeration tools and and subdomain generation algorithm, the results are combined into a single file: ```all_enumerated_subdomains_combined_unique.txt```
 
 4. A new directory is created for each domain in the domains.txt file, within each new directory the subdomains of that domain are placed into a new file (\<domain>-subdomains.out). 
 
@@ -90,6 +114,7 @@ $ ./WebRecon Starbucks
 ## Future Plans:
 * add a function to check that the needed tools exists within $PATH and throw errors if not.
 * use rapid7 fdns data 
+* pull the most recent files from https://wordlists.assetnote.io/ for subdomain generation.
 
 ## Resources: 
 
